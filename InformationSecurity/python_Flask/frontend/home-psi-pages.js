@@ -2731,6 +2731,8 @@ window.PSI_SUM = (function() {
         // 2026-07-08:跟 PSI_INT 一致 - sidebar 隐藏, main 占满整页
         const sidebarEl = document.querySelector('.psi-sum-page .sidebar');
         if (sidebarEl) sidebarEl.style.display = 'none';
+        const mainEl = document.querySelector('.psi-sum-page .main-content');
+        if (mainEl) mainEl.classList.add('active');
         const backBtn = $('psiSumBackBtn'); if (backBtn) backBtn.style.display = 'inline-block';
         const section = $('psiSumCurrentGroupSection'); if (section) section.style.display = 'block';
         document.querySelectorAll('#psiSumMyGroupList .psi-group-item').forEach(li => {
@@ -3004,6 +3006,8 @@ window.PSI_SUM = (function() {
         // 2026-07-08:显示 sidebar,隐藏 main(跟 PSI_INT 一致)
         const sidebarEl = document.querySelector('.psi-sum-page .sidebar');
         if (sidebarEl) sidebarEl.style.display = 'block';
+        const mainEl = document.querySelector('.psi-sum-page .main-content');
+        if (mainEl) mainEl.classList.remove('active');
         const backBtn = $('psiSumBackBtn'); if (backBtn) backBtn.style.display = 'none';
         const section = $('psiSumCurrentGroupSection'); if (section) section.style.display = 'none';
         resetMainArea();
