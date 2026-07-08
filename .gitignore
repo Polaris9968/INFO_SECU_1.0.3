@@ -70,3 +70,6 @@ Kunlun/build_mixed/
 
 # 运行时用户数据（密码哈希/邮箱/小组数据，绝密）
 InformationSecurity/python_Flask/backend/data/
+
+# AI 助手私人速查表（Friday 读，但不入 git 历史）
+CLAUDE_FOR_FRIDAY.md
