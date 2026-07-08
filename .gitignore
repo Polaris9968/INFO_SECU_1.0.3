@@ -73,3 +73,7 @@ InformationSecurity/python_Flask/backend/data/
 
 # AI 助手私人速查表（Friday 读，但不入 git 历史）
 CLAUDE_FOR_FRIDAY.md
+
+# 2026-07-08 本地 SPEC + 备份
+docs/
+backend/app.py.bak.*
