@@ -21,5 +21,5 @@ class KunlunPSICard(KunlunRunner):
     log_tag = 'Kunlun-PSICard'
 
     @classmethod
-    def parse_result(cls, cardinality_txt='', **kwargs):
+    def parse_result(cls, cardinality_txt='', *args, **kwargs):
         return {'cardinality': int(cardinality_txt.strip() or 0)}

@@ -387,13 +387,17 @@ def _generic_upload_handler(spec: ProtocolSpec):
     """
     通用 upload:从原 psi upload 函数(line 2993)参数化
     差异:PSI-Sum 多 values 字段;SS-PSI 是 mock
+    关键:还必须把 items / original_items / 原字节写到 kunlun_dir/{role}.txt 等 3 个文件
     """
     from app import (
         allowed_file,
         _probe_json_paths,
         _standardize_token,
         _parse_json_items,
+        extract_items_from_file,
+        Config,
     )
+    import os as _os
     try:
         group_id = request.form.get('groupId', '').upper()
         if not group_id:
@@ -443,24 +447,76 @@ def _generic_upload_handler(spec: ProtocolSpec):
 
         content = file.read().decode('utf-8')
         mode = group.get('standardize_mode', 'auto')
-
-        # 解析 items(简化版:统一用 _parse_json_items 或按行 split)
         is_json = file.filename.lower().endswith('.json')
-        if is_json:
-            json_path = group.get('json_path')
-            try:
-                if json_path:
-                    items, original_items = _parse_json_items(content, json_path)
-                else:
-                    items = [line.strip() for line in content.split('\n') if line.strip()]
-                    original_items = items
-            except Exception as e:
-                return jsonify({'error': f'JSON 解析失败:{str(e)}'}), 400
-        else:
-            items = [line.strip() for line in content.split('\n') if line.strip()]
-            original_items = items
 
-        # PSI-Sum 调用 add_upload(items, original_items=, values=)
+        # 统一解析入口(与老 app.py psi upload 一致:走 extract_items_from_file,内部会调 _standardize_token)
+        # JSON path:receiver 可选 path,sender 强制沿用 group.json_path
+        if is_json:
+            if username == group['creator']:
+                form_path = request.form.get('path', '').strip() or None
+                if not form_path:
+                    try:
+                        peek = __import__('json').loads(content)
+                        if isinstance(peek, dict):
+                            peek_path = peek.get('path')
+                            if isinstance(peek_path, str):
+                                form_path = peek_path
+                    except Exception:
+                        pass
+                json_path = form_path
+            else:
+                json_path = group.get('json_path')
+                if not json_path:
+                    return jsonify({'error': '请等组长(receiver)上传并选择 JSON path'}), 400
+        else:
+            json_path = None
+
+        try:
+            items, original_items = extract_items_from_file(content, file.filename, mode, path=json_path)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+
+        if not items:
+            return jsonify({'error': '文件中未找到有效数据'}), 400
+
+        # 持久化 group.json_path(receiver 上传 JSON 且选了 path 时写入)
+        if is_json and username == group['creator'] and json_path:
+            data = spec.manager_cls.load_groups()
+            g = next((x for x in data.get('groups', []) if x['id'] == group_id), None)
+            if g is not None:
+                g['json_path'] = json_path
+                spec.manager_cls.save_groups(data)
+
+        # 写文件到 kunlun_dir(3 个)
+        kunlun_dir = _os.path.join(getattr(Config, spec.upload_data_dir_attr), f"group_{group_id}")
+        _os.makedirs(kunlun_dir, exist_ok=True)
+        role = 'receiver' if username == group['creator'] else 'sender'
+
+        std_path = _os.path.join(kunlun_dir, f"{role}.txt")
+        with open(std_path, 'w', encoding='utf-8') as f:
+            for item in items:
+                f.write(f"{item}\n")
+
+        original_path = _os.path.join(kunlun_dir, f"original_{role}.txt")
+        with open(original_path, 'w', encoding='utf-8') as f:
+            for orig in original_items:
+                f.write(f"{orig}\n")
+
+        filename_ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else 'txt'
+        if filename_ext not in ('txt', 'csv', 'json'):
+            filename_ext = 'txt'
+        uploaded_path = _os.path.join(kunlun_dir, f"uploaded_{role}.{filename_ext}")
+        with open(uploaded_path, 'wb') as f:
+            f.write(content.encode('utf-8'))
+
+        # PSI-Sum: 额外写 values 到 {role}_value.txt(Kunlun 二进制读这个)
+        if spec.protocol_id == 'psi_sum' and values is not None:
+            values_path = _os.path.join(kunlun_dir, f"{role}_value.txt")
+            with open(values_path, 'w', encoding='utf-8') as f:
+                for v in values:
+                    f.write(f'{v}\n')
+
+        # 调用 add_upload(写 JSON)
         if spec.protocol_id == 'psi_sum':
             ok, msg = spec.manager_cls.add_upload(group_id, username, items,
                                                    original_items=original_items,

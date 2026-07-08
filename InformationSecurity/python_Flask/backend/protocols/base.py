@@ -510,9 +510,11 @@ class KunlunRunner:
             else:
                 return {'success': False, 'error': f'结果文件不存在: {fname}'}
 
-        # parse
+        # parse(避免 **dict 解包导致含点号的 key 掉落 —— 改为按位置传 string)
+        # 子类可重写 parse_result(cls, file1_text, file2_text, ...)
         try:
-            parsed = cls.parse_result(**result_texts)
+            args = [result_texts[f] for f in cls.result_filenames]
+            parsed = cls.parse_result(*args)
         except Exception as e:
             return {'success': False, 'error': f'解析结果失败: {e}'}
 
@@ -520,13 +522,14 @@ class KunlunRunner:
         return parsed
 
     @classmethod
-    def parse_result(cls, **result_texts):
-        """协议特定解析。默认:第一文件按行 split 成 list"""
-        first_fname = cls.result_filenames[0]
-        text = result_texts[first_fname]
+    def parse_result(cls, *result_texts):
+        """协议特定解析。默认:第一文件按行 split 成 list
+        多 result_filenames:仅处理第 1 个(子类 override 处理多结果)
+        """
+        text = result_texts[0]
         items = [line.strip() for line in text.split('\n') if line.strip()]
         if cls.result_filenames == ('cardinality.txt',):
-            return {'cardinality': int(text.strip())}
+            return {'cardinality': int(text.strip() or 0)}
         if cls.result_filenames == ('union.txt',):
             return {'union': items, 'count': len(items)}
         # PSI 默认
