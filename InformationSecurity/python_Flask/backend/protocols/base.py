@@ -1,4 +1,4 @@
-# protocols/base.py — 1.0.2 协议抽象基类
+# protocols/base.py — 1.0.3 协议抽象基类
 """
 BaseGroupManager / KunlunRunner / ProtocolSpec
 

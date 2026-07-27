@@ -1,4 +1,4 @@
-# INFO_SECU 1.0.2 隐私计算系统（精简版）
+# INFO_SECU 1.0.3 隐私计算系统（精简版）
 
 基于 **精简版 Kunlun** 密码学库的 Web 隐私集合运算演示平台，支持 **5 种协议**：PSI / PSU / PSI-Match / PSI-Sum / SS-PSI。
 
@@ -6,7 +6,7 @@
 
 > ⚠️ **协议覆盖度**: 前 3 个协议 (PSI/PSU/PSI-Match) **协议计算 + 业务流程全真实**; 后 2 个协议 (PSI-Sum/SS-PSI) **业务流程全真实** (成员加入/上传/状态同步走真实 API + JSON 持久化 + polling), **协议计算结果为 mock** (写死 cardinality/sum/intersection 用于演示)
 
-> 📌 **1.0.2 是从 1.0.1 复制过来的"实验田"**：Kunlun 源码精简 91%（48MB → 4MB），仅保留 demo 必需的源码，详细变更见末尾 [变更日志](#变更日志)。
+> 📌 **1.0.3 是从 1.0.2 复制过来的"实验田"**：Kunlun 源码精简 91%（48MB → 4MB），仅保留 demo 必需的源码，详细变更见末尾 [变更日志](#变更日志)。
 
 ## 协议一览
 
@@ -21,7 +21,7 @@
 ## 目录结构
 
 ```
-INFO_SECU_1.0.2/                           # 项目根 (整个目录约 180MB)
+INFO_SECU_1.0.3/                           # 项目根 (整个目录约 180MB)
 ├── Kunlun/                                # 精简版 Kunlun 源码 (4MB)
 │   ├── crypto/ utility/ include/ netio/    # 基础原语
 │   ├── mpc/{psi,pso,rpmt,ot,oprf,okvs,peqt,vole}/   # 协议实现
@@ -83,9 +83,9 @@ venv/bin/pip install Flask-Limiter
 export JWT_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))") && python3 -c "import app; app.app.run(host='0.0.0.0', port=Config.PORT, debug=False, use_reloader=False)"  # 避开 Flask debug reloader 不可靠问题
 ```
 
-启动后访问：**http://localhost:5003/login.html** (1.0.2 默认端口, Config.PORT 在 `app.py` line 66)
+启动后访问：**http://localhost:5004/login.html** (1.0.3 默认端口, Config.PORT 在 `app.py` line 70)
 
-> ⚠️ **端口冲突?** 1.0.1 默认 5002, 1.0.2 默认 **5003** (避免两版本同时跑撞端口)。要换端口改 `backend/app.py` line 66 的 `Config.PORT`。
+> ⚠️ **端口冲突?** 1.0.2 默认 5003, 1.0.3 默认 **5004** (避免两版本同时跑撞端口)。要换端口改 `backend/app.py` line 70 的 `Config.PORT`。
 
 ### 3. 前端
 
@@ -106,8 +106,8 @@ export JWT_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))
 2. `.env` 已在 `.gitignore`, **永远不要 commit**; `.env.example` 不含真值, 可以 commit
 3. `backend/data/*.json` 含真实用户密码哈希 (bcrypt) 和 PSI 业务数据, 已被 `.gitignore` 排除
 4. `Kunlun/PSO_data/*_data/` 是协议测试用的真实数据, 已排除
-5. 生产部署建议用 HTTPS + 反向代理 (nginx), 不要直接暴露 Flask 5003 端口
-6. **C++ 端路径硬编码**: `Kunlun/test/my_*.cpp` 第 2 行 `#define KUNLUN_BASE_DIR "/root/projects/INFO_SECU_1.0.2/Kunlun"`, 改项目根目录后必须 sed 全量替换并重编译 7 个 demo binary, 否则 Flask 调 binary 会找不到数据目录
+5. 生产部署建议用 HTTPS + 反向代理 (nginx), 不要直接暴露 Flask 5004 端口
+6. **C++ 端路径硬编码**: `Kunlun/test/my_*.cpp` 第 2 行 `#define KUNLUN_BASE_DIR "/root/projects/INFO_SECU_1.0.3/Kunlun"`, 改项目根目录后必须 sed 全量替换并重编译 7 个 demo binary, 否则 Flask 调 binary 会找不到数据目录
 
 ## 路径硬编码清单 (项目里搜不到的坑)
 
@@ -120,7 +120,7 @@ export JWT_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))
 
 ## 变更日志
 
-### 1.0.2 (2026-07-05, 从 1.0.1 rsync 复制 + 精简)
+### 1.0.3 (2026-07-05, 从 1.0.2 rsync 复制 + 精简)
 
 **精简 (Kunlun 从 129MB → 4MB 源码 + 143MB 编译产物)**:
 
@@ -138,8 +138,8 @@ export JWT_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))
 2. `home.html` 三处 `(只有 receiver 可以保存)` 提示文字清空 (改成空 span, 保留 id 给 JS 用, 避免 null 异常)
 3. `backend/app.py` CRLF → LF (rsync 拷过来是 Windows 行尾, sed 替换不动)
 4. `requirements.txt` 补 `Flask-Limiter` 提示 (1.0.1 时代就没装, README 加一行)
-5. 端口 5002 → 5003 临时切换 (避免和 1.0.1 撞)
-6. `KUNLUN_BASE` 7 个 my_*.cpp 的 `#define KUNLUN_BASE_DIR` 全部从 `INFO_SECU_1.0` 改成 `INFO_SECU_1.0.2`
+5. 端口 5003 → 5004 临时切换 (避免和 1.0.2 撞)
+6. `KUNLUN_BASE` 7 个 my_*.cpp 的 `#define KUNLUN_BASE_DIR` 全部从 `INFO_SECU_1.0` 改成 `INFO_SECU_1.0.3`
 
 **清理**:
 
@@ -149,14 +149,14 @@ export JWT_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))
 
 **体积对比**:
 
-| | 1.0.1 (半残: 只编 8 个 binary) | 1.0.2 (完整: 编全 25 个 binary) |
+| | 1.0.2 (半残: 只编 8 个 binary) | 1.0.3 (完整: 编全 25 个 binary) |
 |---|---|---|
 | Kunlun 源码 (不含 build) | ~48MB | **~4MB** ⬇️ 91% |
 | Kunlun/build/ | 81MB | 143MB |
 | InformationSecurity/ | 89MB | 25MB (venv + 空 data/uploads) |
 | **整体** | 222MB | **177MB** |
 
-直接比 222→177 看不出源码精简 (因为 1.0.2 编全了 binary 反大 build), **真正效果是 Kunlun 源码从 48MB → 4MB (省 91%)**。
+直接比 222→177 看不出源码精简 (因为 1.0.3 编全了 binary 反大 build), **真正效果是 Kunlun 源码从 48MB → 4MB (省 91%)**。
 
 ### 1.0.1 (2026-06-25, 上一版本)
 

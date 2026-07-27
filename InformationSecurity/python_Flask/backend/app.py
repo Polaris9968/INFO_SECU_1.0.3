@@ -56,7 +56,7 @@ class Config:
 
     # ==================== Kunlun 库路径(统一管理)====================
     # 所有 Kunlun 相关路径都从 KUNLUN_BASE 派生,未来迁移项目只改这里
-    KUNLUN_BASE = "/root/projects/INFO_SECU_1.0.2/Kunlun"
+    KUNLUN_BASE = "/root/projects/INFO_SECU_1.0.3/Kunlun"
     KUNLUN_BUILD_DIR = os.path.join(KUNLUN_BASE, "build")
     KUNLUN_DATA_DIR = os.path.join(KUNLUN_BASE, "PSO_data")
     KUNLUN_PSI_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_data")
@@ -67,7 +67,7 @@ class Config:
 
     # ==================== 服务器配置 ====================
     HOST = "0.0.0.0"
-    PORT = 5003
+    PORT = 5004  # 1.0.3 端口,避开 1.0.2 (5003) 和 1.0.1 (5002)
     DEBUG = True
 
 
