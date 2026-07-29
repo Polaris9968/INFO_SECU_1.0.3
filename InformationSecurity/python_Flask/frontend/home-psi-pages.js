@@ -832,18 +832,32 @@ async function loadPSICiphertextPreview() {
 function downloadPSIResult() {
     if (!currentPSIGroupId) return;
     const token = sessionStorage.getItem("token");
-    // 带 token 的下载链接 (2026-07-02:改用 download-result-with-original 译文版)
-    const url = `/api/psi-group/${currentPSIGroupId}/download-result-with-original`;
-    fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
-        .then(r => { if (!r.ok) throw new Error('下载失败'); return r.blob(); })
-        .then(blob => {
+    // 2026-07-30 Friday fix (Bug 1):译文版需先归档才能下,在这里自动归档。
+    const gid = currentPSIGroupId;
+    (async () => {
+        try {
+            // 1. 先归档当前轮(设计:归档后生成 intersection_with_original.txt)
+            const fr = await fetch(`/api/psi-group/${gid}/finalize-round`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+            });
+            // 409 = 该轮已归档 → OK,跳过
+            if (!fr.ok && fr.status !== 409) {
+                const err = await fr.json().catch(() => ({}));
+                throw new Error(err.error || '归档失败');
+            }
+            // 2. 再下译文版
+            const url = `/api/psi-group/${gid}/download-result-with-original`;
+            const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!r.ok) throw new Error('下载失败');
+            const blob = await r.blob();
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `psi_intersection_${currentPSIGroupId}.txt`;
+            a.download = `psi_intersection_${gid}.txt`;
             a.click();
             URL.revokeObjectURL(a.href);
-        })
-        .catch(e => alert('下载失败:' + e.message));
+        } catch (e) { alert('下载失败:' + e.message); }
+    })();
 }
 
 // 2026-07-02:下载己方密文/明文按钮已删除(用户要求 sender 只需 1 个结果按钮)

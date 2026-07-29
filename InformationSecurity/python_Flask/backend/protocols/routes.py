@@ -97,6 +97,31 @@ def _make_protocol_extras(group, username, spec):
         result_count = int(result) if result is not None else 0
         preview_data = [{'value': str(result_count), 'original': str(result_count)}]
 
+    # 2026-07-30 Friday fix (Bug 3):前端 line 402-403 读 result_preview[i].original/.value,
+    # 但 read_intersection_from_file 返回 int list (如 [13810000001, ...]) 不是 dict list。
+    # 需要 reverse_map 把 uint64 → 原始 token。
+    # 交集里的每个 uint64 都在我自己的 uploads.numbers 里出现过(因为我自己的 numbers 、
+    # 对方的 numbers、双方交集合并;交集数字 ＝ 双侧都 hash 后的同值)，
+    # 所以自己的 reverse_map 能覆盖交集所有项的“原始 token”。
+    if cfg['count_returns_list'] and isinstance(result, list):
+        rev_nums = []
+        rev_origs = []
+        for u in (group.get('uploads') or []):
+            if u.get('username') == username:
+                rev_nums = [str(n) for n in u.get('numbers', [])]
+                rev_origs = u.get('original_items', [])
+                break
+        # reverse_map: str(numbers[i]) → original_items[i]
+        rev_map = dict(zip(rev_nums, rev_origs))
+        preview_data = []
+        for x in result[:20]:
+            x_int = int(x)
+            x_str = str(x_int)
+            preview_data.append({
+                'value': x_str,
+                'original': rev_map.get(x_str, x_str),  # 本侧映射不到就显示数字本身
+            })
+
     result_path = os.path.join(kunlun_dir, cfg['result_filename'])
     completed = os.path.exists(result_path)
 
