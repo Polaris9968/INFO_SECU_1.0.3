@@ -490,11 +490,17 @@ def _generic_upload_handler(spec: ProtocolSpec):
         # 写文件到 kunlun_dir(3 个)
         kunlun_dir = _os.path.join(getattr(Config, spec.upload_data_dir_attr), f"group_{group_id}")
         _os.makedirs(kunlun_dir, exist_ok=True)
-        role = 'receiver' if username == group['creator'] else 'sender'
+        # SS-PSI: party1/party2; 其他协议：receiver/sender
+        if spec.protocol_id == 'ss_psi':
+            role = 'party1' if username == group['creator'] else 'party2'
+        else:
+            role = 'receiver' if username == group['creator'] else 'sender'
 
         std_path = _os.path.join(kunlun_dir, f"{role}.txt")
+        # SS-PSI: 写原始 token (不 standardize)，其他协议写 standardized tokens
+        write_items = original_items if spec.protocol_id == 'ss_psi' else items
         with open(std_path, 'w', encoding='utf-8') as f:
-            for item in items:
+            for item in write_items:
                 f.write(f"{item}\n")
 
         original_path = _os.path.join(kunlun_dir, f"original_{role}.txt")
@@ -596,9 +602,15 @@ def _make_start_computation_handler(spec: ProtocolSpec):
             data = spec.manager_cls.load_groups()
             for g in data['groups']:
                 if g['id'] == group_id:
-                    # PSIMatch: 直接存 subset_result
+                    # PSIMatch: 直接存 subset_result(SPIKE 3.5 fix: 含 is_subset / missing_count / matched_alice)
                     if spec.protocol_id == 'psi_match':
-                        g['subset_result'] = {'cardinality': result.get('cardinality', 0)}
+                        g['subset_result'] = {
+                            'cardinality': result.get('cardinality', 0),
+                            'is_subset': result.get('is_subset', False),
+                            'missing_count': result.get('missing_count', 0),
+                            'matched_alice': result.get('matched_alice', []),
+                            'matched_count': result.get('matched_count', 0),
+                        }
                     g['pending_computation'] = {
                         'duration_seconds': result.get('duration_seconds'),
                         'duration_human': result.get('duration_human'),
@@ -622,6 +634,12 @@ def _make_start_computation_handler(spec: ProtocolSpec):
                 response['union_count'] = len(result.get('union', []))
             elif spec.protocol_id == 'psi_match':
                 response['cardinality'] = result.get('cardinality', 0)
+                # SPIKE 3.5 fix: routes.py 之前只返回 cardinality, 不透传 is_subset / matched_alice
+                # 前端 PSI-Match 页面 .psi-match-page 看不到 subsetMatchResult, missingMatchElements 永远是 0
+                response['is_subset'] = result.get('is_subset', False)
+                response['missing_count'] = result.get('missing_count', 0)
+                response['matched_alice'] = result.get('matched_alice', [])
+                response['matched_count'] = result.get('matched_count', 0)
             elif spec.protocol_id == 'psi_sum':
                 # PSI-Sum: 把 result 存到 sum_result 字段
                 data = spec.manager_cls.load_groups()

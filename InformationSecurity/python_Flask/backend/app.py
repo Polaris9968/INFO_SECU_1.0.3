@@ -1129,11 +1129,24 @@ def serve_static(filename):
 
 # ==================== 协议路由注册(2026-07-08 重构) ====================
 # 81 个协议路由由 protocols.routes 工厂生成
-from protocols.routes import register_routes as _register_protocol_routes
-_register_protocol_routes(app)
+# Friday 22:15: 改成函数内 import,避开循环(protocols/psi.py 顶部 from app import Config vs app.py 末尾 register_routes 互锁)
+def _register_protocol_routes_lazy():
+    from protocols.routes import register_routes
+    register_routes(app)
+
+# Friday 22:23: 加 error handler 把 500 traceback 打到 stderr (DEBUG=False 抓不到)
+@app.errorhandler(Exception)
+def _friday_error_log(e):
+    import traceback
+    traceback.print_exc()
+    sys.stdout.flush()
+    return jsonify({'error': f'internal: {type(e).__name__}: {str(e)[:300]}'}), 500
 
 # ==================== 启动程序 ====================
 if __name__ == '__main__':
+    # 在 main 块里才走完整 import 链,避免循环加载时 protocols/* 的 `from app import` 撞 partial module
+    _register_protocol_routes_lazy()
+
     print("=" * 50)
     print("🚀 Flask 服务器启动中...")
     print("=" * 50)

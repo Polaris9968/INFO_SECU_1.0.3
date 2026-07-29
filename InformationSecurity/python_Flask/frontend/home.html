@@ -881,6 +881,7 @@ body > .sidebar {
     to { transform: rotate(360deg); }
 }
 
+
 /* ---------- 集合匹配 ---------- */
 .psi-match-page * {
     margin: 0;
@@ -929,13 +930,20 @@ body > .sidebar {
     border-radius: 6px;
     color: #1f2937;
     cursor: pointer;
+    transition: all 0.3s;
 }
 
+.psi-match-page .top-bar .back-btn:hover {
+    background: #e5e7eb;
+}
+
+/* 主容器 */
 .psi-match-page .main-container {
     display: block;
     margin-top: 0;
 }
 
+/* 左侧边栏 */
 .psi-match-page .sidebar {
     width: 100%;
     max-width: 1200px;
@@ -945,6 +953,7 @@ body > .sidebar {
     box-sizing: border-box;
 }
 
+/* 右侧主区域(默认隐藏,选中小组后加 .active 才显示) */
 .psi-match-page .main-content {
     display: none;
     padding: 25px;
@@ -964,16 +973,7 @@ body > .sidebar {
     background: #4b5563;
 }
 
-.psi-match-page .card {
-    background: white;
-    color: #333;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px #f3f4f6;
-}
-
-/* Tab 切换 */
+/* Tab 切换(2026-07-01:多轮历史) */
 .psi-match-page .tab-bar {
     display: flex;
     gap: 10px;
@@ -1008,6 +1008,7 @@ body > .sidebar {
     display: block;
 }
 
+/* 历史记录列表 */
 .psi-match-page .history-list {
     display: flex;
     flex-direction: column;
@@ -1083,6 +1084,16 @@ body > .sidebar {
     font-style: italic;
 }
 
+/* 卡片样式 */
+.psi-match-page .card {
+    background: white;
+    color: #333;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px #f3f4f6;
+}
+
 .psi-match-page .card h2 {
     margin-bottom: 15px;
     color: #3b82f6;
@@ -1095,6 +1106,7 @@ body > .sidebar {
     font-size: 16px;
 }
 
+/* 表单样式 */
 .psi-match-page .form-group {
     margin-bottom: 15px;
 }
@@ -1132,6 +1144,7 @@ body > .sidebar {
     max-width: 400px;
 }
 
+/* 按钮样式 */
 .psi-match-page .btn {
     padding: 10px 20px;
     border: none;
@@ -1145,6 +1158,7 @@ body > .sidebar {
 .psi-match-page .btn-primary {
     background: #3b82f6;
     color: #ffffff;
+    border: none;
 }
 
 .psi-match-page .btn-primary:hover {
@@ -1155,33 +1169,50 @@ body > .sidebar {
 .psi-match-page .btn-success {
     background: #10b981;
     color: #ffffff;
+    border: none;
 }
 
 .psi-match-page .btn-success:hover {
     transform: scale(1.02);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
 .psi-match-page .btn-warning {
     background: #f59e0b;
     color: #ffffff;
+    border: none;
+}
+
+.psi-match-page .btn-warning:hover {
+    transform: scale(1.02);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
 .psi-match-page .btn-danger {
     background: #ef4444;
     color: #ffffff;
+    border: none;
+}
+
+.psi-match-page .btn-danger:hover {
+    background: #dc2626;
 }
 
 .psi-match-page .btn:disabled {
     background: #e5e7eb;
     color: #9ca3af;
+    border-color: #e5e7eb;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
-.psi-match-page .group-list {
+/* 求交小组列表 */
+.psi-match-page .psi-group-list {
     list-style: none;
 }
 
-.psi-match-page .group-item {
+.psi-match-page .psi-group-item {
     padding: 12px;
     background: #f5f5f5;
     border-radius: 8px;
@@ -1191,28 +1222,34 @@ body > .sidebar {
     border-left: 4px solid transparent;
 }
 
-.psi-match-page .group-item:hover {
+.psi-match-page .psi-group-item:hover {
     background: #e8f0fe;
     border-left-color: #3b82f6;
 }
 
-.psi-match-page .group-item.active {
+.psi-match-page .psi-group-item.active {
     background: #e8f0fe;
     border-left-color: #3b82f6;
 }
 
-.psi-match-page .group-name {
+.psi-match-page .psi-group-name {
     font-weight: bold;
     margin-bottom: 5px;
 }
 
-.psi-match-page .group-id {
+.psi-match-page .psi-group-id {
     font-family: 'Courier New', monospace;
     font-size: 14px;
     color: #666;
 }
 
-.psi-match-page .group-code {
+.psi-match-page .psi-group-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.psi-match-page .psi-group-code {
     font-family: 'Courier New', monospace;
     font-size: 24px;
     font-weight: bold;
@@ -1225,6 +1262,7 @@ body > .sidebar {
     margin-bottom: 15px;
 }
 
+/* 文件上传区 */
 .psi-match-page .upload-area {
     border: 2px dashed #ccc;
     border-radius: 8px;
@@ -1254,6 +1292,7 @@ body > .sidebar {
     font-size: 14px;
 }
 
+/* 结果预览 */
 .psi-match-page .result-container {
     margin-top: 20px;
     padding: 15px;
@@ -1262,27 +1301,106 @@ body > .sidebar {
     border: 1px solid #e5e7eb;
 }
 
-.psi-match-page .stats-info {
+.psi-match-page .result-container h3 {
+    margin-bottom: 10px;
+    color: #3b82f6;
+}
+
+.psi-match-page #psiIntersectionResult {
+    background: #f0f7ff;
+    padding: 15px;
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 状态指示器 */
+.psi-match-page .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.psi-match-page .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.psi-match-page .status-dot.waiting {
+    background: #f59e0b;
+}
+
+.psi-match-page .status-dot.ready {
+    background: #10b981;
+}
+
+.psi-match-page .status-dot.processing {
+    background: #3b82f6;
+    animation: pulse 2s infinite;
+}
+
+.psi-match-page .status-text {
+    font-size: 14px;
+    color: #666;
+}
+
+/* 成员状态 */
+.psi-match-page .member-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.psi-match-page .member-name {
+    font-weight: 500;
+}
+
+.psi-match-page .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.psi-match-page .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #10b981);
+    transition: width 0.5s;
+    width: 0;
+}
+
+.psi-match-page .psi-stats {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 15px;
-    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
-.psi-match-page .stat-item {
+.psi-match-page .psi-stat-item {
     background: #f0f7ff;
     padding: 15px;
     border-radius: 8px;
     text-align: center;
 }
 
-.psi-match-page .stat-label {
+.psi-match-page .psi-stat-label {
     font-size: 12px;
     color: #666;
     margin-bottom: 5px;
 }
 
-.psi-match-page .stat-value {
+.psi-match-page .psi-stat-value {
     font-size: 24px;
     font-weight: bold;
     color: #3b82f6;
@@ -1307,25 +1425,6 @@ body > .sidebar {
 .psi-match-page .group-info-value {
     font-weight: 500;
     color: #1f2937;
-}
-
-.psi-match-page .member-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.psi-match-page .member-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: #f9fafb;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-}
-
-.psi-match-page .member-name {
-    font-weight: 500;
 }
 
 .psi-match-page .action-buttons {
@@ -1371,12 +1470,24 @@ body > .sidebar {
     animation: pulse 2s infinite;
 }
 
-.psi-match-page .upload-record {
-    padding: 8px 12px;
-    background: #f9fafb;
+.psi-match-page .refresh-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 12px;
     border-radius: 6px;
-    margin-bottom: 6px;
-    border-left: 3px solid #10b981;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.psi-match-page .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
 }
 
 .psi-match-page .error-message {
@@ -1403,6 +1514,7 @@ body > .sidebar {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
 
 /* ---------- 隐私求并 ---------- */
 .psi-union-page * {
@@ -1452,13 +1564,20 @@ body > .sidebar {
     border-radius: 6px;
     color: #1f2937;
     cursor: pointer;
+    transition: all 0.3s;
 }
 
+.psi-union-page .top-bar .back-btn:hover {
+    background: #e5e7eb;
+}
+
+/* 主容器 */
 .psi-union-page .main-container {
     display: block;
     margin-top: 0;
 }
 
+/* 左侧边栏 */
 .psi-union-page .sidebar {
     width: 100%;
     max-width: 1200px;
@@ -1468,6 +1587,7 @@ body > .sidebar {
     box-sizing: border-box;
 }
 
+/* 右侧主区域(默认隐藏,选中小组后加 .active 才显示) */
 .psi-union-page .main-content {
     display: none;
     padding: 25px;
@@ -1487,16 +1607,7 @@ body > .sidebar {
     background: #4b5563;
 }
 
-.psi-union-page .card {
-    background: white;
-    color: #333;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px #f3f4f6;
-}
-
-/* Tab 切换 */
+/* Tab 切换(2026-07-01:多轮历史) */
 .psi-union-page .tab-bar {
     display: flex;
     gap: 10px;
@@ -1531,6 +1642,7 @@ body > .sidebar {
     display: block;
 }
 
+/* 历史记录列表 */
 .psi-union-page .history-list {
     display: flex;
     flex-direction: column;
@@ -1606,6 +1718,16 @@ body > .sidebar {
     font-style: italic;
 }
 
+/* 卡片样式 */
+.psi-union-page .card {
+    background: white;
+    color: #333;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px #f3f4f6;
+}
+
 .psi-union-page .card h2 {
     margin-bottom: 15px;
     color: #3b82f6;
@@ -1618,6 +1740,7 @@ body > .sidebar {
     font-size: 16px;
 }
 
+/* 表单样式 */
 .psi-union-page .form-group {
     margin-bottom: 15px;
 }
@@ -1655,6 +1778,7 @@ body > .sidebar {
     max-width: 400px;
 }
 
+/* 按钮样式 */
 .psi-union-page .btn {
     padding: 10px 20px;
     border: none;
@@ -1668,6 +1792,7 @@ body > .sidebar {
 .psi-union-page .btn-primary {
     background: #3b82f6;
     color: #ffffff;
+    border: none;
 }
 
 .psi-union-page .btn-primary:hover {
@@ -1678,24 +1803,45 @@ body > .sidebar {
 .psi-union-page .btn-success {
     background: #10b981;
     color: #ffffff;
+    border: none;
+}
+
+.psi-union-page .btn-success:hover {
+    transform: scale(1.02);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
 .psi-union-page .btn-warning {
     background: #f59e0b;
     color: #ffffff;
+    border: none;
+}
+
+.psi-union-page .btn-warning:hover {
+    transform: scale(1.02);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
 .psi-union-page .btn-danger {
     background: #ef4444;
     color: #ffffff;
+    border: none;
+}
+
+.psi-union-page .btn-danger:hover {
+    background: #dc2626;
 }
 
 .psi-union-page .btn:disabled {
     background: #e5e7eb;
     color: #9ca3af;
+    border-color: #e5e7eb;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
+/* 求交小组列表 */
 .psi-union-page .psi-group-list {
     list-style: none;
 }
@@ -1725,6 +1871,18 @@ body > .sidebar {
     margin-bottom: 5px;
 }
 
+.psi-union-page .psi-group-id {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #666;
+}
+
+.psi-union-page .psi-group-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
 .psi-union-page .psi-group-code {
     font-family: 'Courier New', monospace;
     font-size: 24px;
@@ -1738,6 +1896,7 @@ body > .sidebar {
     margin-bottom: 15px;
 }
 
+/* 文件上传区 */
 .psi-union-page .upload-area {
     border: 2px dashed #ccc;
     border-radius: 8px;
@@ -1767,12 +1926,92 @@ body > .sidebar {
     font-size: 14px;
 }
 
+/* 结果预览 */
 .psi-union-page .result-container {
     margin-top: 20px;
     padding: 15px;
     background: #f9fafb;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
+}
+
+.psi-union-page .result-container h3 {
+    margin-bottom: 10px;
+    color: #3b82f6;
+}
+
+.psi-union-page #psiIntersectionResult {
+    background: #f0f7ff;
+    padding: 15px;
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 状态指示器 */
+.psi-union-page .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.psi-union-page .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.psi-union-page .status-dot.waiting {
+    background: #f59e0b;
+}
+
+.psi-union-page .status-dot.ready {
+    background: #10b981;
+}
+
+.psi-union-page .status-dot.processing {
+    background: #3b82f6;
+    animation: pulse 2s infinite;
+}
+
+.psi-union-page .status-text {
+    font-size: 14px;
+    color: #666;
+}
+
+/* 成员状态 */
+.psi-union-page .member-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.psi-union-page .member-name {
+    font-weight: 500;
+}
+
+.psi-union-page .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.psi-union-page .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #10b981);
+    transition: width 0.5s;
+    width: 0;
 }
 
 .psi-union-page .psi-stats {
@@ -1822,27 +2061,6 @@ body > .sidebar {
     color: #1f2937;
 }
 
-.psi-union-page .progress-bar {
-    width: 100%;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 15px;
-}
-
-.psi-union-page .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #10b981);
-    transition: width 0.5s;
-    width: 0;
-}
-
-.psi-union-page .status-text {
-    font-size: 14px;
-    color: #666;
-}
-
 .psi-union-page .action-buttons {
     display: flex;
     gap: 10px;
@@ -1870,6 +2088,42 @@ body > .sidebar {
     display: none !important;
 }
 
+.psi-union-page .auto-refresh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #10b981;
+}
+
+.psi-union-page .refresh-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.psi-union-page .refresh-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.psi-union-page .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
 .psi-union-page .error-message {
     background: #fee2e2;
     color: #991b1b;
@@ -1895,23 +2149,69 @@ body > .sidebar {
     to { transform: rotate(360deg); }
 }
 
-/* ============================================================
-   2026-07-08: PSI-Sum page 核心 scoped 样式补齐
-   (PSI_INT 完整定义 .card / .card h2/.h3 / .form-group input / .btn / .form-group select,
-   PSI_Sum 只复制了 .label, 其他没复制导致字号/间距/圆角/输入框全部不一致)
-   ============================================================ */
-.psi-sum-page .card {
-    background: white;
-    color: #333;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px #f3f4f6;
+
+/* ---------- 隐私求和 ---------- */
+.psi-sum-page * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
+
+.psi-sum-page {
+    font-family: Arial, sans-serif;
+    background: #f9fafb;
+    color: #1f2937;
+}
+
+/* 顶部导航栏 */
+.psi-sum-page .top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    z-index: 100;
+}
+
+.psi-sum-page .top-bar .logo {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.psi-sum-page .top-bar .user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.psi-sum-page .top-bar .back-btn {
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 6px;
+    color: #1f2937;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.psi-sum-page .top-bar .back-btn:hover {
+    background: #e5e7eb;
+}
+
+/* 主容器 */
 .psi-sum-page .main-container {
     display: block;
     margin-top: 0;
 }
+
+/* 左侧边栏 */
 .psi-sum-page .sidebar {
     width: 100%;
     max-width: 1200px;
@@ -1920,6 +2220,8 @@ body > .sidebar {
     padding: 25px;
     box-sizing: border-box;
 }
+
+/* 右侧主区域(默认隐藏,选中小组后加 .active 才显示) */
 .psi-sum-page .main-content {
     display: none;
     padding: 25px;
@@ -1928,24 +2230,162 @@ body > .sidebar {
 .psi-sum-page .main-content.active {
     display: block;
 }
+
 .psi-sum-page .back-btn {
     margin-bottom: 20px;
     background: #6b7280;
     color: #ffffff;
 }
+
+.psi-sum-page .back-btn:hover {
+    background: #4b5563;
+}
+
+/* Tab 切换(2026-07-01:多轮历史) */
+.psi-sum-page .tab-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0;
+}
+
+.psi-sum-page .tab-btn {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #6b7280;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+}
+
+.psi-sum-page .tab-btn:hover {
+    color: #3b82f6;
+}
+
+.psi-sum-page .tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+    font-weight: 500;
+}
+
+.psi-sum-page .tab-content {
+    display: block;
+}
+
+/* 历史记录列表 */
+.psi-sum-page .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.psi-sum-page .round-item {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 15px 20px;
+    border-left: 4px solid #3b82f6;
+}
+
+.psi-sum-page .round-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.psi-sum-page .round-title {
+    font-weight: bold;
+    font-size: 15px;
+    color: #1f2937;
+}
+
+.psi-sum-page .round-meta {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.psi-sum-page .round-body {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.psi-sum-page .round-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.psi-sum-page .round-actions .btn {
+    margin: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.psi-sum-page .save-round-btn {
+    background: #10b981;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    margin-right: 10px;
+}
+
+.psi-sum-page .save-round-btn:hover {
+    background: #059669;
+    transform: scale(1.02);
+}
+
+.psi-sum-page .save-round-hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin-left: 10px;
+    font-style: italic;
+}
+
+/* 卡片样式 */
+.psi-sum-page .card {
+    background: white;
+    color: #333;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px #f3f4f6;
+}
+
 .psi-sum-page .card h2 {
     margin-bottom: 15px;
     color: #3b82f6;
     font-size: 18px;
 }
+
 .psi-sum-page .card h3 {
     margin-bottom: 10px;
     color: #3b82f6;
     font-size: 16px;
 }
+
+/* 表单样式 */
 .psi-sum-page .form-group {
     margin-bottom: 15px;
 }
+
+.psi-sum-page .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 14px;
+}
+
 .psi-sum-page .form-group input,
 .psi-sum-page .form-group select,
 .psi-sum-page .form-group textarea {
@@ -1957,6 +2397,7 @@ body > .sidebar {
     color: #333;
     box-sizing: border-box;
 }
+
 .psi-sum-page .form-group input:focus,
 .psi-sum-page .form-group select:focus,
 .psi-sum-page .form-group textarea:focus {
@@ -1970,6 +2411,8 @@ body > .sidebar {
     min-width: 260px;
     max-width: 400px;
 }
+
+/* 按钮样式 */
 .psi-sum-page .btn {
     padding: 10px 20px;
     border: none;
@@ -1978,51 +2421,51 @@ body > .sidebar {
     font-size: 14px;
     transition: all 0.3s;
     margin-right: 10px;
-    margin-top: 10px;
 }
-.psi-sum-page .btn-secondary {
-    background: #6b7280;
-    color: #ffffff;
-    border: none;
-}
-.psi-sum-page .btn-secondary:hover:not(:disabled) {
-    background: #4b5563;
-}
+
 .psi-sum-page .btn-primary {
     background: #3b82f6;
     color: #ffffff;
     border: none;
 }
-.psi-sum-page .btn-primary:hover:not(:disabled) {
+
+.psi-sum-page .btn-primary:hover {
     transform: scale(1.02);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
+
 .psi-sum-page .btn-success {
     background: #10b981;
     color: #ffffff;
     border: none;
 }
-.psi-sum-page .btn-success:hover:not(:disabled) {
+
+.psi-sum-page .btn-success:hover {
     transform: scale(1.02);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
+
 .psi-sum-page .btn-warning {
     background: #f59e0b;
     color: #ffffff;
     border: none;
 }
-.psi-sum-page .btn-warning:hover:not(:disabled) {
+
+.psi-sum-page .btn-warning:hover {
     transform: scale(1.02);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
+
 .psi-sum-page .btn-danger {
     background: #ef4444;
     color: #ffffff;
     border: none;
 }
-.psi-sum-page .btn-danger:hover:not(:disabled) {
+
+.psi-sum-page .btn-danger:hover {
     background: #dc2626;
 }
+
 .psi-sum-page .btn:disabled {
     background: #e5e7eb;
     color: #9ca3af;
@@ -2032,13 +2475,149 @@ body > .sidebar {
     box-shadow: none;
 }
 
-/* ============================================================
-   2026-07-08: PSI-Sum page 所有 scoped 样式 (成员状态 / 进度条 / psi-stats / 卡片)
-   (PSI_INT/MATCH/UNION 都有这些样式但都 scope 到各自 page, PSI_SUM 遗漏 → 补齐)
-   ============================================================ */
-.psi-sum-page .group-info-card {
-    background: linear-gradient(135deg, #f0f7ff, #e8f5e9);
+/* 求交小组列表 */
+.psi-sum-page .psi-group-list {
+    list-style: none;
 }
+
+.psi-sum-page .psi-group-item {
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 4px solid transparent;
+}
+
+.psi-sum-page .psi-group-item:hover {
+    background: #e8f0fe;
+    border-left-color: #3b82f6;
+}
+
+.psi-sum-page .psi-group-item.active {
+    background: #e8f0fe;
+    border-left-color: #3b82f6;
+}
+
+.psi-sum-page .psi-group-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.psi-sum-page .psi-group-id {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #666;
+}
+
+.psi-sum-page .psi-group-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.psi-sum-page .psi-group-code {
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    font-weight: bold;
+    color: #3b82f6;
+    letter-spacing: 3px;
+    text-align: center;
+    padding: 10px;
+    background: #f0f7ff;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+/* 文件上传区 */
+.psi-sum-page .upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 10px;
+}
+
+.psi-sum-page .upload-area:hover {
+    border-color: #3b82f6;
+    background: #f0f7ff;
+}
+
+.psi-sum-page .upload-area input[type="file"] {
+    display: none;
+}
+
+.psi-sum-page .upload-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.psi-sum-page .upload-text {
+    color: #666;
+    font-size: 14px;
+}
+
+/* 结果预览 */
+.psi-sum-page .result-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.psi-sum-page .result-container h3 {
+    margin-bottom: 10px;
+    color: #3b82f6;
+}
+
+.psi-sum-page #psiIntersectionResult {
+    background: #f0f7ff;
+    padding: 15px;
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 状态指示器 */
+.psi-sum-page .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.psi-sum-page .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.psi-sum-page .status-dot.waiting {
+    background: #f59e0b;
+}
+
+.psi-sum-page .status-dot.ready {
+    background: #10b981;
+}
+
+.psi-sum-page .status-dot.processing {
+    background: #3b82f6;
+    animation: pulse 2s infinite;
+}
+
+.psi-sum-page .status-text {
+    font-size: 14px;
+    color: #666;
+}
+
+/* 成员状态 */
 .psi-sum-page .member-status {
     display: flex;
     justify-content: space-between;
@@ -2047,22 +2626,12 @@ body > .sidebar {
     border-radius: 6px;
     margin-bottom: 8px;
     border: 1px solid #e5e7eb;
-    font-size: 13px;
 }
-.psi-sum-page .status-badge {
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 12px;
+
+.psi-sum-page .member-name {
     font-weight: 500;
 }
-.psi-sum-page .status-badge.uploaded {
-    background: #d1fae5;
-    color: #065f46;
-}
-.psi-sum-page .status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
-}
+
 .psi-sum-page .progress-bar {
     width: 100%;
     height: 8px;
@@ -2071,193 +2640,783 @@ body > .sidebar {
     overflow: hidden;
     margin-top: 15px;
 }
+
 .psi-sum-page .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, #3b82f6, #10b981);
     transition: width 0.5s;
     width: 0;
 }
+
 .psi-sum-page .psi-stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 15px;
     margin-bottom: 20px;
 }
+
 .psi-sum-page .psi-stat-item {
     background: #f0f7ff;
     padding: 15px;
     border-radius: 8px;
     text-align: center;
 }
+
 .psi-sum-page .psi-stat-label {
     font-size: 12px;
     color: #666;
     margin-bottom: 5px;
 }
+
 .psi-sum-page .psi-stat-value {
     font-size: 24px;
     font-weight: bold;
     color: #3b82f6;
-    word-break: break-all;
 }
-.psi-sum-page .upload-area {
-    border: 2px dashed #d1d5db;
-    border-radius: 8px;
-    padding: 25px;
-    text-align: center;
-    cursor: pointer;
-    background: #fafafa;
-    transition: all 0.2s;
+
+.psi-sum-page .group-info-card {
+    background: linear-gradient(135deg, #f0f7ff, #e8f5e9);
 }
-.psi-sum-page .upload-area:hover {
-    border-color: #3b82f6;
-    background: #f0f7ff;
-}
-.psi-sum-page .upload-icon {
-    font-size: 36px;
-    margin-bottom: 8px;
-}
-.psi-sum-page .upload-text {
-    color: #666;
-    font-size: 13px;
-}
-.psi-sum-page .upload-area input[type="file"] {
-    display: none;
-}
-.psi-sum-page .result-container {
-    margin-top: 15px;
-}
-.psi-sum-page .result-container h3 {
-    font-size: 13px;
-    color: #555;
-    margin-bottom: 6px;
-}
-.psi-sum-page .result-container pre {
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: 6px;
-    max-height: 200px;
-    overflow-y: auto;
-    margin: 0;
-    font-family: monospace;
-    font-size: 12px;
-    color: #333;
-    border: 1px solid #e5e7eb;
-}
-.psi-sum-page .group-info-card .psi-group-code {
-    font-size: 20px;
-    font-weight: bold;
-    color: #3b82f6;
-    letter-spacing: 2px;
-    margin: 10px 0;
-}
+
 .psi-sum-page .group-info-item {
     display: flex;
     justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-.psi-sum-page .group-info-item:last-child {
-    border-bottom: none;
-}
-.psi-sum-page .group-info-label {
-    color: #666;
-    font-size: 13px;
-}
-.psi-sum-page .group-info-value {
-    color: #1f2937;
-    font-size: 13px;
-    font-weight: 500;
-}
-.psi-sum-page .action-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e7eb;
 }
 
-/* ============================================================
-   2026-07-07: PSI-Sum page (复用 PSI_INT 的 tab / round-item 样式)
-   ============================================================ */
-.psi-sum-page .form-group label,
-.psi-sum-page .form-group input,
-.psi-sum-page .form-group select,
-.psi-sum-page .form-group textarea {
-    font-size: 14px;
-    color: #333;
-}
-.psi-sum-page .form-group label {
-    display: block;
-    margin-bottom: 5px;
+.psi-sum-page .group-info-label {
     color: #666;
-}
-.psi-sum-page .tab-btn,
-.psi-sum-page .psi-sum-tabs .tab-btn {
-    padding: 8px 16px;
-    margin-right: 5px;
-    border: 1px solid #d1d5db;
-    border-bottom: none;
-    background: #f3f4f6;
-    cursor: pointer;
-    border-radius: 6px 6px 0 0;
     font-size: 14px;
-    transition: all 0.2s;
 }
-.psi-sum-page .tab-btn:hover {
+
+.psi-sum-page .group-info-value {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.psi-sum-page .action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.psi-sum-page .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.psi-sum-page .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.psi-sum-page .hint-text {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 5px;
+}
+
+.psi-sum-page .hidden {
+    display: none !important;
+}
+
+.psi-sum-page .auto-refresh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #10b981;
+}
+
+.psi-sum-page .refresh-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.psi-sum-page .refresh-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.psi-sum-page .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+.psi-sum-page .error-message {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+.psi-sum-page .success-message {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+
+/* ---------- 安全多方求交 (SS-PSI) ---------- */
+.ss-psi-page * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.ss-psi-page {
+    font-family: Arial, sans-serif;
+    background: #f9fafb;
+    color: #1f2937;
+}
+
+/* 顶部导航栏 */
+.ss-psi-page .top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    z-index: 100;
+}
+
+.ss-psi-page .top-bar .logo {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.ss-psi-page .top-bar .user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.ss-psi-page .top-bar .back-btn {
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 6px;
+    color: #1f2937;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.ss-psi-page .top-bar .back-btn:hover {
     background: #e5e7eb;
 }
-.psi-sum-page .tab-btn.active {
-    background: #fff;
-    border-color: #3b82f6;
-    color: #1e40af;
-    font-weight: 600;
+
+/* 主容器 */
+.ss-psi-page .main-container {
+    display: block;
+    margin-top: 0;
 }
-.psi-sum-page .round-item {
+
+/* 左侧边栏 */
+.ss-psi-page .sidebar {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #f3f4f6;
+    padding: 25px;
+    box-sizing: border-box;
+}
+
+/* 右侧主区域(默认隐藏,选中小组后加 .active 才显示) */
+.ss-psi-page .main-content {
+    display: none;
+    padding: 25px;
+}
+
+.ss-psi-page .main-content.active {
+    display: block;
+}
+
+.ss-psi-page .back-btn {
+    margin-bottom: 20px;
+    background: #6b7280;
+    color: #ffffff;
+}
+
+.ss-psi-page .back-btn:hover {
+    background: #4b5563;
+}
+
+/* Tab 切换(2026-07-01:多轮历史) */
+.ss-psi-page .tab-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0;
+}
+
+.ss-psi-page .tab-btn {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #6b7280;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+}
+
+.ss-psi-page .tab-btn:hover {
+    color: #3b82f6;
+}
+
+.ss-psi-page .tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+    font-weight: 500;
+}
+
+.ss-psi-page .tab-content {
+    display: block;
+}
+
+/* 历史记录列表 */
+.ss-psi-page .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.ss-psi-page .round-item {
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     padding: 15px 20px;
     border-left: 4px solid #3b82f6;
-    margin-bottom: 15px;
 }
-.psi-sum-page .round-header {
+
+.ss-psi-page .round-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
 }
-.psi-sum-page .round-title {
+
+.ss-psi-page .round-title {
     font-weight: bold;
     font-size: 15px;
     color: #1f2937;
 }
-.psi-sum-page .round-meta {
+
+.ss-psi-page .round-meta {
     font-size: 12px;
     color: #6b7280;
 }
-.psi-sum-page .round-body {
+
+.ss-psi-page .round-body {
     margin-top: 8px;
     font-size: 13px;
     color: #4b5563;
 }
-.psi-sum-page .round-actions {
+
+.ss-psi-page .round-actions {
     display: flex;
     gap: 8px;
     margin-top: 12px;
     flex-wrap: wrap;
 }
-.psi-sum-page .round-actions .btn {
+
+.ss-psi-page .round-actions .btn {
     margin: 0;
     padding: 6px 12px;
     font-size: 12px;
 }
-.psi-sum-page .hint-text {
-    color: #6b7280;
-    font-size: 12px;
+
+.ss-psi-page .save-round-btn {
+    background: #10b981;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    margin-right: 10px;
 }
-.psi-sum-page .hidden {
+
+.ss-psi-page .save-round-btn:hover {
+    background: #059669;
+    transform: scale(1.02);
+}
+
+.ss-psi-page .save-round-hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin-left: 10px;
+    font-style: italic;
+}
+
+/* 卡片样式 */
+.ss-psi-page .card {
+    background: white;
+    color: #333;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px #f3f4f6;
+}
+
+.ss-psi-page .card h2 {
+    margin-bottom: 15px;
+    color: #3b82f6;
+    font-size: 18px;
+}
+
+.ss-psi-page .card h3 {
+    margin-bottom: 10px;
+    color: #3b82f6;
+    font-size: 16px;
+}
+
+/* 表单样式 */
+.ss-psi-page .form-group {
+    margin-bottom: 15px;
+}
+
+.ss-psi-page .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 14px;
+}
+
+.ss-psi-page .form-group input,
+.ss-psi-page .form-group select,
+.ss-psi-page .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.ss-psi-page .form-group input:focus,
+.ss-psi-page .form-group select:focus,
+.ss-psi-page .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+.ss-psi-page .form-group select {
+    background: white;
+    cursor: pointer;
+    width: auto;
+    min-width: 260px;
+    max-width: 400px;
+}
+
+/* 按钮样式 */
+.ss-psi-page .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    margin-right: 10px;
+}
+
+.ss-psi-page .btn-primary {
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+}
+
+.ss-psi-page .btn-primary:hover {
+    transform: scale(1.02);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.ss-psi-page .btn-success {
+    background: #10b981;
+    color: #ffffff;
+    border: none;
+}
+
+.ss-psi-page .btn-success:hover {
+    transform: scale(1.02);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.ss-psi-page .btn-warning {
+    background: #f59e0b;
+    color: #ffffff;
+    border: none;
+}
+
+.ss-psi-page .btn-warning:hover {
+    transform: scale(1.02);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.ss-psi-page .btn-danger {
+    background: #ef4444;
+    color: #ffffff;
+    border: none;
+}
+
+.ss-psi-page .btn-danger:hover {
+    background: #dc2626;
+}
+
+.ss-psi-page .btn:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 求交小组列表 */
+.ss-psi-page .psi-group-list {
+    list-style: none;
+}
+
+.ss-psi-page .psi-group-item {
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 4px solid transparent;
+}
+
+.ss-psi-page .psi-group-item:hover {
+    background: #e8f0fe;
+    border-left-color: #3b82f6;
+}
+
+.ss-psi-page .psi-group-item.active {
+    background: #e8f0fe;
+    border-left-color: #3b82f6;
+}
+
+.ss-psi-page .psi-group-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.ss-psi-page .psi-group-id {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #666;
+}
+
+.ss-psi-page .psi-group-meta {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.ss-psi-page .psi-group-code {
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    font-weight: bold;
+    color: #3b82f6;
+    letter-spacing: 3px;
+    text-align: center;
+    padding: 10px;
+    background: #f0f7ff;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+/* 文件上传区 */
+.ss-psi-page .upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 10px;
+}
+
+.ss-psi-page .upload-area:hover {
+    border-color: #3b82f6;
+    background: #f0f7ff;
+}
+
+.ss-psi-page .upload-area input[type="file"] {
+    display: none;
+}
+
+.ss-psi-page .upload-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.ss-psi-page .upload-text {
+    color: #666;
+    font-size: 14px;
+}
+
+/* 结果预览 */
+.ss-psi-page .result-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.ss-psi-page .result-container h3 {
+    margin-bottom: 10px;
+    color: #3b82f6;
+}
+
+.ss-psi-page #psiIntersectionResult {
+    background: #f0f7ff;
+    padding: 15px;
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 状态指示器 */
+.ss-psi-page .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.ss-psi-page .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.ss-psi-page .status-dot.waiting {
+    background: #f59e0b;
+}
+
+.ss-psi-page .status-dot.ready {
+    background: #10b981;
+}
+
+.ss-psi-page .status-dot.processing {
+    background: #3b82f6;
+    animation: pulse 2s infinite;
+}
+
+.ss-psi-page .status-text {
+    font-size: 14px;
+    color: #666;
+}
+
+/* 成员状态 */
+.ss-psi-page .member-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.ss-psi-page .member-name {
+    font-weight: 500;
+}
+
+.ss-psi-page .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.ss-psi-page .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #10b981);
+    transition: width 0.5s;
+    width: 0;
+}
+
+.ss-psi-page .psi-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.ss-psi-page .psi-stat-item {
+    background: #f0f7ff;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.ss-psi-page .psi-stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.ss-psi-page .psi-stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3b82f6;
+}
+
+.ss-psi-page .group-info-card {
+    background: linear-gradient(135deg, #f0f7ff, #e8f5e9);
+}
+
+.ss-psi-page .group-info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ss-psi-page .group-info-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.ss-psi-page .group-info-value {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.ss-psi-page .action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ss-psi-page .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.ss-psi-page .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.ss-psi-page .hint-text {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 5px;
+}
+
+.ss-psi-page .hidden {
     display: none !important;
 }
+
+.ss-psi-page .auto-refresh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #10b981;
+}
+
+.ss-psi-page .refresh-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.ss-psi-page .refresh-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.ss-psi-page .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+.ss-psi-page .error-message {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+.ss-psi-page .success-message {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 </style>
 </head>
 
@@ -2277,7 +3436,7 @@ body > .sidebar {
     <div class="nav-btn" onclick="showPage('psiMatch')">集合匹配</div>
     <div class="nav-btn" onclick="showPage('psiUnion')">隐私求并</div>
     <div class="nav-btn" onclick="showPage('psiSum')">隐私求和</div>
-    <div class="nav-btn" onclick="showPage('ssPsi')">多方隐私求交</div>
+    <div class="nav-btn" onclick="showPage('ssPsi')">安全多方求交</div>
     <div class="nav-btn" onclick="showPage('settings')">设置</div>
     <div class="nav-btn hidden" id="adminNavBtn" onclick="showPage('admin')">用户管理</div>
 </div>
@@ -2297,7 +3456,7 @@ body > .sidebar {
                 <li>隐私求并 (PSU) - 输出完整并集, 双方对称可见明文</li>
                 <li>隐私集合匹配 (PSI-Card) - 子集判定, 返回交集基数与缺失数</li>
                 <li>隐私求和 (PSI-Sum) - 交集元素的关联数值求和</li>
-                <li>多方隐私求交 (SS-PSI) - 四方场景求共同交集</li>
+                <li>安全多方求交 (SS-PSI) - 四方场景求共同交集</li>
                 <li>管理员用户管理功能</li>
             </ul>
             <p style="margin-top: 15px; color: #666;">请点击左侧导航栏使用各项功能。</p>
@@ -3112,6 +4271,14 @@ body > .sidebar {
                         <label>小组名称（创建新小组）</label>
                         <input type="text" id="ssPsiGroupNameInput" placeholder="输入小组名称" maxlength="50">
                     </div>
+                    <div class="form-group">
+                        <label>标准化方式（仅创建时可设，之后不可改）</label>
+                        <select id="ssPsiStandardizeMode" class="form-control">
+                            <option value="auto" selected>自动（数字直接用，文字 SHA-256 哈希）</option>
+                            <option value="number_only">只保留数字（文字丢弃）</option>
+                            <option value="text_all">全部当文字哈希</option>
+                        </select>
+                    </div>
                     <button class="btn btn-primary" onclick="SS_PSI.createGroup()">创建小组</button>
                     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                         <div class="form-group">
@@ -3173,8 +4340,8 @@ body > .sidebar {
 
                 <div class="card" id="ssPsiStartCard" style="display:none;">
                     <h2>🚀 开始多方求交</h2>
-                    <p style="color: #666; margin-bottom: 10px;">所有参与方已上传, 点击下方按钮触发多方隐私求交 (演示模式)。</p>
-                    <button class="btn btn-success" id="ssPsiStartBtn" onclick="SS_PSI.start()">▶ 开始多方隐私求交</button>
+                    <p style="color: #666; margin-bottom: 10px;">所有参与方已上传, 点击下方按钮触发安全多方求交 (演示模式)。</p>
+                    <button class="btn btn-success" id="ssPsiStartBtn" onclick="SS_PSI.start()">▶ 开始安全多方求交</button>
                 </div>
 
                 <div class="card" id="ssPsiResultCard" style="display:none;">

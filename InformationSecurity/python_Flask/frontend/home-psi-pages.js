@@ -3371,3 +3371,183 @@ window.SS_PSI = (function() {
 
     return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, _loadMyGroups: loadMyGroups };
 })();
+// ============================================================
+// 子页面 JS: PSI_SUM (IIFE 隔离，SPIKE 5 新增)
+// ============================================================
+window.PSI_SUM = (function() {
+let currentGroupId = null;
+let currentGroupName = '';
+let isCreator = false;
+
+async function checkLogin() {
+    const token = sessionStorage.getItem("token");
+    if (!token) { window.location.href = "login_register.html"; return false; }
+    const result = await apiGetCurrentUser();
+    if (!result.success) { logout(); return false; }
+    return true;
+}
+
+async function initPage() {
+    const isLoggedIn = await checkLogin();
+    if (!isLoggedIn) return;
+    loadMyGroups();
+}
+
+async function loadMyGroups() {
+    const list = document.getElementById('psiSumMyGroupList');
+    if (!list) return;
+    list.innerHTML = '<li class="empty-state">加载中...</li>';
+    const result = await apiGetMyPSISumGroups();
+    if (!result.success) { list.innerHTML = '<li class="empty-state">加载失败</li>'; return; }
+    const groups = result.groups || [];
+    if (groups.length === 0) { list.innerHTML = '<li class="empty-state">暂无小组</li>'; return; }
+    list.innerHTML = groups.map(g => `
+        <li class="psi-group-item" onclick="PSI_SUM.selectGroup('${g.id}')">
+            <div class="psi-group-name">${g.name}</div>
+            <div class="psi-group-code">${g.id}</div>
+            <div class="hint-text">成员：${g.members?.length || 0} | 创建：${g.created_at || ''}</div>
+        </li>
+    `).join('');
+}
+
+function selectGroup(gid) {
+    currentGroupId = gid;
+    document.getElementById('psiSumView1').style.display = 'none';
+    document.getElementById('psiSumBackBtn').style.display = 'block';
+    document.getElementById('psiSumView2').style.display = 'block';
+    loadGroupDetail(gid);
+}
+
+function backToList() {
+    currentGroupId = null;
+    document.getElementById('psiSumView1').style.display = 'block';
+    document.getElementById('psiSumBackBtn').style.display = 'none';
+    document.getElementById('psiSumView2').style.display = 'none';
+    loadMyGroups();
+}
+
+async function loadGroupDetail(gid) {
+    document.getElementById('psiSumCurrentGroupId').textContent = gid;
+    document.getElementById('psiSumCurrentGroupName').textContent = '加载中...';
+}
+
+async function createGroup() {
+    const name = document.getElementById('psiSumGroupNameInput').value.trim();
+    const mode = document.getElementById('psiSumStandardizeMode').value;
+    if (!name) { alert('请输入小组名称'); return; }
+    const result = await apiCreatePSISumGroup(name, mode);
+    if (result.success) { alert('小组创建成功！ID: ' + result.group.id); loadMyGroups(); }
+    else { alert('创建失败：' + (result.error || '未知错误')); }
+}
+
+async function joinGroup() {
+    const gid = document.getElementById('psiSumGroupIdInput').value.trim().toUpperCase();
+    if (gid.length !== 4) { alert('请输入 4 位小组 ID'); return; }
+    const result = await apiJoinPSISumGroup(gid);
+    alert(result.message || (result.error || '加入失败'));
+    if (result.message || result.success) loadMyGroups();
+}
+
+function handleSetFileSelected(input) {
+    document.getElementById('psiSumUploadBtn').disabled = !input.files[0];
+}
+
+function handleValueFileSelected(input) {}
+
+async function uploadFile() { alert('上传功能待对接完整 API'); }
+async function start() { alert('开始运算功能待对接完整 API'); }
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('psiSumTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    document.getElementById('psiSumCurrentTab').style.display = tab === 'current' ? 'block' : 'none';
+    document.getElementById('psiSumHistoryTab').style.display = tab === 'history' ? 'block' : 'none';
+}
+function saveAndStartNewRound() { alert('保存并新一轮功能待对接'); }
+function deleteUpload() { alert('撤回上传功能待对接'); }
+function deleteGroup() { alert('解散小组功能待对接'); }
+
+return { init: initPage, selectGroup, backToList, createGroup, joinGroup, handleSetFileSelected, handleValueFileSelected, uploadFile, start, switchTab, saveAndStartNewRound, deleteUpload, deleteGroup };
+})();
+
+// ============================================================
+// 子页面 JS: SS_PSI (IIFE 隔离，SPIKE 5 新增)
+// ============================================================
+window.SS_PSI = (function() {
+let currentGroupId = null;
+let currentGroupName = '';
+let isCreator = false;
+
+async function checkLogin() {
+    const token = sessionStorage.getItem("token");
+    if (!token) { window.location.href = "login_register.html"; return false; }
+    const result = await apiGetCurrentUser();
+    if (!result.success) { logout(); return false; }
+    return true;
+}
+
+async function initPage() {
+    const isLoggedIn = await checkLogin();
+    if (!isLoggedIn) return;
+    loadMyGroups();
+}
+
+async function loadMyGroups() {
+    const list = document.getElementById('ssPsiMyGroupList');
+    if (!list) return;
+    list.innerHTML = '<li class="empty-state">加载中...</li>';
+    const result = await apiGetMySSPSIGroups();
+    if (!result.success) { list.innerHTML = '<li class="empty-state">加载失败</li>'; return; }
+    const groups = result.groups || [];
+    if (groups.length === 0) { list.innerHTML = '<li class="empty-state">暂无小组</li>'; return; }
+    list.innerHTML = groups.map(g => `
+        <li class="psi-group-item" onclick="SS_PSI.selectGroup('${g.id}')">
+            <div class="psi-group-name">${g.name}</div>
+            <div class="psi-group-code">${g.id}</div>
+            <div class="hint-text">成员：${g.members?.length || 0} | 创建：${g.created_at || ''}</div>
+        </li>
+    `).join('');
+}
+
+function selectGroup(gid) {
+    currentGroupId = gid;
+    document.getElementById('ssPsiView1').style.display = 'none';
+    document.getElementById('ssPsiBackBtn').style.display = 'block';
+    document.getElementById('ssPsiView2').style.display = 'block';
+    loadGroupDetail(gid);
+}
+
+function backToList() {
+    currentGroupId = null;
+    document.getElementById('ssPsiView1').style.display = 'block';
+    document.getElementById('ssPsiBackBtn').style.display = 'none';
+    document.getElementById('ssPsiView2').style.display = 'none';
+    loadMyGroups();
+}
+
+async function loadGroupDetail(gid) {
+    document.getElementById('ssPsiCurrentGroupId').textContent = gid;
+    document.getElementById('ssPsiCurrentGroupName').textContent = '加载中...';
+}
+
+async function createGroup() {
+    const name = document.getElementById('ssPsiGroupNameInput').value.trim();
+    if (!name) { alert('请输入小组名称'); return; }
+    const result = await apiCreateSSPSIGroup(name);
+    if (result.success) { alert('小组创建成功！ID: ' + result.group.id); loadMyGroups(); }
+    else { alert('创建失败：' + (result.error || '未知错误')); }
+}
+
+async function joinGroup() {
+    const gid = document.getElementById('ssPsiGroupIdInput').value.trim().toUpperCase();
+    if (gid.length !== 4) { alert('请输入 4 位小组 ID'); return; }
+    const result = await apiJoinSSPSIGroup(gid);
+    alert(result.message || (result.error || '加入失败'));
+    if (result.message || result.success) loadMyGroups();
+}
+
+async function uploadFile() { alert('上传功能待对接完整 API'); }
+async function start() { alert('开始运算功能待对接完整 API'); }
+function deleteGroup() { alert('解散小组功能待对接'); }
+
+return { init: initPage, selectGroup, backToList, createGroup, joinGroup, uploadFile, start, deleteGroup };
+})();

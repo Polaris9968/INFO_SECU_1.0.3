@@ -5,7 +5,7 @@ from .psi_card import PSICardGroupManager, KunlunPSICard
 from .psu import PSIUnionGroupManager, KunlunPSU
 from .psi_match import PSIMatchGroupManager, KunlunPSIMatch
 from .psi_sum import PSISumGroupManager, KunlunPSISum
-from .ss_psi import SSPSIGroupManager, MockSSPSI
+from .ss_psi import SSPSIGroupManager, SpsoSSPSI
 
 __all__ = [
     'BaseGroupManager', 'KunlunRunner', 'ProtocolSpec',
@@ -14,5 +14,5 @@ __all__ = [
     'PSIUnionGroupManager', 'KunlunPSU',
     'PSIMatchGroupManager', 'KunlunPSIMatch',
     'PSISumGroupManager', 'KunlunPSISum',
-    'SSPSIGroupManager', 'MockSSPSI',
+    'SSPSIGroupManager', 'SpsoSSPSI',
 ]

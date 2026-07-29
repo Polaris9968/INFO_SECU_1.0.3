@@ -1,14 +1,19 @@
 # protocols/registry.py — 6 个 ProtocolSpec 实例
 """
 基于对 app.py 实际 @app.route 的精确统计(81 协议路由 + 2 demo = 83)。
+
+SPIKE 2 集成: PROTOCOL_PSI 的 runner_cls 从 KunlunPSI 切到 SpsoPSI。
+SPIKE 3 集成: PROTOCOL_PSU / PROTOCOL_PSI_CARD / PROTOCOL_PSI_MATCH 切到 sPSO。
+Kunlun 类保留作 fallback(注释标 'SPIKE 3: fallback')。
 """
 from .base import ProtocolSpec
 from .psi import PSIGroupManager, KunlunPSI
+from .spso import SpsoPSI, SpsoPSU, SpsoPSICard, SpsoPSIMatch, SpsoPSISum
 from .psi_card import PSICardGroupManager, KunlunPSICard
 from .psu import PSIUnionGroupManager, KunlunPSU
 from .psi_match import PSIMatchGroupManager, KunlunPSIMatch
 from .psi_sum import PSISumGroupManager, KunlunPSISum
-from .ss_psi import SSPSIGroupManager, MockSSPSI
+from .ss_psi import SSPSIGroupManager, SpsoSSPSI
 
 
 # ==================== 6 个 ProtocolSpec ====================
@@ -20,7 +25,7 @@ PROTOCOL_PSI = ProtocolSpec(
     page_filename='privacy_intersection.html',
     upload_data_dir_attr='KUNLUN_PSI_DATA_DIR',
     id_length=4,
-    runner_cls=KunlunPSI,
+    runner_cls=SpsoPSI,        # SPIKE 2: 切到 sPSO,KunlunPSI 保留作 fallback
     # 端点开关
     has_history=True,
     has_preview_ciphertext=True,
@@ -42,7 +47,7 @@ PROTOCOL_PSI_CARD = ProtocolSpec(
     page_filename='psi_match.html',
     upload_data_dir_attr='KUNLUN_PSI_CARD_DATA_DIR',
     id_length=4,
-    runner_cls=KunlunPSICard,
+    runner_cls=SpsoPSICard,           # SPIKE 3: 切到 sPSO,KunlunPSICard 保留作 fallback
     has_history=False,                       # PSI-Card 当前无多轮
     has_preview_ciphertext=False,
     has_download_result=True,
@@ -62,7 +67,7 @@ PROTOCOL_PSU = ProtocolSpec(
     page_filename='privacy_union.html',
     upload_data_dir_attr='KUNLUN_PSI_UNION_DATA_DIR',
     id_length=4,
-    runner_cls=KunlunPSU,
+    runner_cls=SpsoPSU,               # SPIKE 3: 切到 sPSO,KunlunPSU 保留作 fallback
     has_history=True,
     has_preview_ciphertext=True,
     has_download_result=True,
@@ -82,7 +87,7 @@ PROTOCOL_PSI_MATCH = ProtocolSpec(
     page_filename='psi_match.html',
     upload_data_dir_attr='KUNLUN_PSI_CARD_DATA_DIR',   # PSI-Match 复用 PSI-Card 目录
     id_length=4,
-    runner_cls=KunlunPSIMatch,
+    runner_cls=SpsoPSIMatch,          # SPIKE 3: 切到 sPSO(用 psi 模拟),KunlunPSIMatch 保留作 fallback
     has_history=True,
     has_preview_ciphertext=True,
     has_download_result=False,                          # PSI-Match 无 download-result
@@ -102,7 +107,7 @@ PROTOCOL_PSI_SUM = ProtocolSpec(
     page_filename='psi_match.html',
     upload_data_dir_attr='KUNLUN_PSI_SUM_DATA_DIR',
     id_length=4,
-    runner_cls=KunlunPSISum,
+    runner_cls=SpsoPSISum,             # SPIKE 4: 切到 sPSO, KunlunPSISum 保留作 fallback
     has_history=True,
     has_preview_ciphertext=False,
     has_download_result=False,
@@ -126,9 +131,9 @@ PROTOCOL_SS_PSI = ProtocolSpec(
     page_filename='ss_psi.html',                       # 前端页面(待确认)
     upload_data_dir_attr='KUNLUN_SS_PSI_DATA_DIR',
     id_length=4,
-    max_members=4,  # SS-PSI EXPECTED_PARTIES
-    runner_cls=MockSSPSI,
-    is_mock=True,
+    max_members=2,  # SPIKE 5: 2-party
+    runner_cls=SpsoSSPSI,
+    is_mock=False,
     has_history=False,
     has_preview_ciphertext=False,
     has_download_result=False,
