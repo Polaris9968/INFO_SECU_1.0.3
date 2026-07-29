@@ -17,6 +17,140 @@ from .base import ProtocolSpec
 
 
 # ==================== 工具函数(从 app.py 复用) ====================
+def _read_first_n(path, n=20):
+    """读文件前 n 行非空内容，返回 (preview, total_count)"""
+    if not os.path.exists(path):
+        return [], 0
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = [line.strip() for line in f if line.strip()]
+    return lines[:n], len(lines)
+
+
+# 2026-07-30 Friday 修复:前端 PSI_INT/PSI_MATCH/PSI_UNION/PSI_SUM 的 refresh 函数
+# 读 result.data.*_completed / result_preview / my_*_preview / computation_human
+# 等 9 个字段,但 1.0.2 重构 (commit 3b27866) 后只返 psi_result/cardinality_result/union_result,
+# 导致"明文预览/密文预览/结果预览/下载按钮/下一轮按钮"全不显示。
+# 这里统一 helper 生成,4 个 PSI 系协议调用。
+_PROTOCOL_EXTRAS_CONFIG = {
+    'psi': {
+        'result_filename': 'intersection.txt',
+        'reader': 'read_intersection_from_file',
+        'completed_field': 'psi_completed',
+        'count_field': 'intersection_count',
+        'preview_field': 'result_preview',
+        'full_count_field': 'result_full_count',
+        'count_returns_list': True,
+    },
+    'psi_card': {
+        'result_filename': 'cardinality.txt',
+        'reader': 'read_cardinality_from_file',
+        'completed_field': 'cardinality_completed',
+        'count_field': 'cardinality_count',
+        'preview_field': 'cardinality_preview',
+        'full_count_field': 'cardinality_full_count',
+        'count_returns_list': False,
+    },
+    'psu': {
+        'result_filename': 'union.txt',
+        'reader': 'read_union_from_file',
+        'completed_field': 'union_completed',
+        'count_field': 'union_count',
+        'preview_field': 'union_preview',
+        'full_count_field': 'union_full_count',
+        'count_returns_list': True,
+    },
+    'psi_match': {
+        'result_filename': 'cardinality.txt',
+        'reader': 'read_cardinality_from_file',
+        'completed_field': 'cardinality_completed',
+        'count_field': 'cardinality_count',
+        'preview_field': 'cardinality_preview',
+        'full_count_field': 'cardinality_full_count',
+        'count_returns_list': False,
+    },
+}
+
+
+def _make_protocol_extras(group, username, spec):
+    """给 4 个 PSI 系协议生成统一 extras dict。"""
+    from app import (
+        Config,
+        read_intersection_from_file,
+        read_cardinality_from_file,
+        read_union_from_file,
+    )
+    cfg = _PROTOCOL_EXTRAS_CONFIG[spec.protocol_id]
+    reader_map = {
+        'read_intersection_from_file': read_intersection_from_file,
+        'read_cardinality_from_file': read_cardinality_from_file,
+        'read_union_from_file': read_union_from_file,
+    }
+    group_id = group['id']
+    kunlun_dir = os.path.join(getattr(Config, spec.upload_data_dir_attr), f"group_{group_id}")
+    role = 'receiver' if username == group['creator'] else 'sender'
+
+    result = reader_map[cfg['reader']](group_id)
+    if cfg['count_returns_list']:
+        result_count = len(result) if isinstance(result, list) else 0
+        preview_data = result[:20] if isinstance(result, list) else []
+    else:
+        result_count = int(result) if result is not None else 0
+        preview_data = [{'value': str(result_count), 'original': str(result_count)}]
+
+    result_path = os.path.join(kunlun_dir, cfg['result_filename'])
+    completed = os.path.exists(result_path)
+
+    ciphertext_preview, ciphertext_full = _read_first_n(
+        os.path.join(kunlun_dir, f"{role}_ciphertext.txt"))
+    original_preview, original_full = _read_first_n(
+        os.path.join(kunlun_dir, f"original_{role}.txt"))
+
+    # 2026-07-30 Friday: sPSO runner 不写 ciphertext 中间文件,fallback 到 group.uploads
+    # 里自己的 numbers(被 hash 后的 uint64 串,反正都算是"加密形态")
+    if not ciphertext_preview:
+        for u in (group.get('uploads') or []):
+            if u.get('username') == username and u.get('numbers'):
+                ciphertext_preview = [str(n) for n in u['numbers'][:20]]
+                ciphertext_full = u.get('count', len(u['numbers']))
+                break
+
+    pending = group.get('pending_computation') or {}
+
+    return {
+        cfg['completed_field']: completed,
+        cfg['count_field']: result_count,
+        cfg['preview_field']: preview_data,
+        cfg['full_count_field']: result_count,
+        'my_ciphertext_preview': ciphertext_preview,
+        'my_ciphertext_full_count': ciphertext_full,
+        'my_original_preview': original_preview,
+        'my_original_full_count': original_full,
+        'computation_human': pending.get('duration_human'),
+        'pending_computation': pending or None,
+        # legacy fields 兼容老前端
+        'psi_result': result if spec.protocol_id == 'psi' else None,
+        'cardinality_result': result if spec.protocol_id in ('psi_card', 'psi_match') else None,
+        'union_result': result if spec.protocol_id == 'psu' else None,
+    }
+
+
+def _psi_match_camel_subset(subset_result):
+    """PSI-Match 后端存 snake_case subset_result,前端读 camelCase。
+    这里转换：is_subset→isSubset, missing_count→missingCount, matched_alice→matchedAlice,
+    matched_count→matchedCount, cardinality→intersectionCardinality。
+    """
+    if not subset_result:
+        return None
+    return {
+        'isSubset': subset_result.get('is_subset', False),
+        'intersectionCardinality': subset_result.get('cardinality', 0),
+        'missingCount': subset_result.get('missing_count', 0),
+        'matchedAlice': subset_result.get('matched_alice', []),
+        'matchedCount': subset_result.get('matched_count', 0),
+        'cardinality': subset_result.get('cardinality', 0),  # legacy
+    }
+
+
 def _get_username():
     """从 jwt_required 中间件注入的 request.current_user 拿 username"""
     return request.current_user['username']
@@ -162,19 +296,18 @@ def _make_get_group_handler(spec: ProtocolSpec):
                 'group': group,
             }
 
+            # 2026-07-30 Friday 修复:前端 PSI/PSI-Match/PSI-Sum refresh 函数读 result.data.my_upload/other_upload,
+            # 但之前只返回 group,前端 uploCount=0 + 没按钮。补预解析字段(2-party 协议适用)
+            uploads = group.get('uploads', [])
+            response_data['my_upload'] = next((u for u in uploads if u.get('username') == username), None)
+            response_data['other_upload'] = next((u for u in uploads if u.get('username') != username), None)
+
             # 协议特定 extras
-            if spec.protocol_id == 'psi':
-                from app import read_intersection_from_file
-                response_data['psi_result'] = read_intersection_from_file(group_id)
-            elif spec.protocol_id == 'psi_card':
-                from app import read_cardinality_from_file
-                response_data['cardinality_result'] = read_cardinality_from_file(group_id)
-            elif spec.protocol_id == 'psu':
-                from app import read_union_from_file
-                response_data['union_result'] = read_union_from_file(group_id)
-            elif spec.protocol_id == 'psi_match':
-                response_data['subset_result'] = group.get('subset_result')
-                response_data['pending_computation'] = group.get('pending_computation')
+            if spec.protocol_id in ('psi', 'psi_card', 'psu', 'psi_match'):
+                response_data.update(_make_protocol_extras(group, username, spec))
+                if spec.protocol_id == 'psi_match':
+                    # PSI-Match 额外透传 subset_result(前端读 camelCase 字段)
+                    response_data['subset_result'] = _psi_match_camel_subset(group.get('subset_result'))
             elif spec.protocol_id == 'psi_sum':
                 response_data.update(_psi_sum_get_extras(group, username))
             elif spec.protocol_id == 'ss_psi':
