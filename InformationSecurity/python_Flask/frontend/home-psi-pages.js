@@ -794,7 +794,7 @@ async function uploadPSIFile() {
             if (result.data.psi_completed) {
                 alert(`PSI 计算完成！\n交集元素数量: ${result.data.intersection_count}`);
             } else {
-                alert(`上传成功！共上传 ${result.data.upload_count} 个元素，等待对方上传...`);
+                alert(`上传成功！共上传 ${result.data.count} 个元素，等待对方上传...`);
             }
         } else {
             alert(result.message || "文件上传失败");
@@ -1463,7 +1463,7 @@ async function uploadPSIMatchFile() {
             if (result.data.subset_completed) {
                 alert(`子集判断完成！\n${result.data.is_subset ? '✅ A 是 B 的子集' : '❌ A 不是 B 的子集'}`);
             } else {
-                alert(`上传成功！共上传 ${result.data.upload_count} 个元素，等待对方上传...`);
+                alert(`上传成功！共上传 ${result.data.count} 个元素，等待对方上传...`);
             }
         } else {
             alert(result.message || "文件上传失败");
@@ -2342,7 +2342,7 @@ async function uploadPSIUnionFile() {
             if (result.data.union_completed) {
                 alert(`并集计算完成！\n并集元素数量: ${result.data.union_count}`);
             } else {
-                alert(`上传成功！共上传 ${result.data.upload_count} 个元素，等待对方上传...`);
+                alert(`上传成功！共上传 ${result.data.count} 个元素，等待对方上传...`);
             }
         } else {
             alert(result.message || "文件上传失败");
@@ -2915,7 +2915,7 @@ window.PSI_SUM = (function() {
             if (result.success) {
                 const d = result.data;
                 statusEl.style.color = '#5a8a3a';
-                statusEl.textContent = `✓ ${setFile.name} (${d.upload_count} 个元素)`
+                statusEl.textContent = `✓ ${setFile.name} (${d.count} 个元素)`
                     + (d.value_count > 0 ? ` + ${d.value_count} 个 value` : ' (未传 value)');
                 const detail = await loadGroupDetail(currentGroupId);
                 if (detail) {
