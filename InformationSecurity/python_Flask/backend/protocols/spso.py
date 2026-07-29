@@ -82,10 +82,13 @@ def _run_spso_mode(group_id, data_dir_attr, spso_mode,
     try:
         client = SpsoClient(runner_path=SPSO_RUNNER, timeout=600)
         # 调 run_psi_on_input(其内部根据 mode 参数路由)
+        # SPIKE 5 (2026-07-30 Friday demo): dump OPRF 中间产物到 data_dir
+        # 给前端 ciphertext 预览看出“已加密”语义。安全是 demo 妥协。
         result_lines = client.run_psi_on_input(
             input_dir=data_dir,
             output_file=out_path,
             mode=spso_mode,
+            dump_dir=data_dir,
         )
     except subprocess.TimeoutExpired:
         return {'success': False, 'error': 'sPSO 计算超时(>600s)'}

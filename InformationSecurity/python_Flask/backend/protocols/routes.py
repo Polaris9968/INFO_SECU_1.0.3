@@ -105,8 +105,21 @@ def _make_protocol_extras(group, username, spec):
     original_preview, original_full = _read_first_n(
         os.path.join(kunlun_dir, f"original_{role}.txt"))
 
-    # 2026-07-30 Friday: sPSO runner 不写 ciphertext 中间文件,fallback 到 group.uploads
-    # 里自己的 numbers(被 hash 后的 uint64 串,反正都算是"加密形态")
+    # SPIKE 5 (2026-07-30 Friday demo): sPSO runner 现在 dump OPRF prf_vals 到
+    # oprf_prf_sender.txt (PSO sender = OprfRecver) / oprf_prf_recver.txt (PSO recver = OprfSender).
+    # 我们按当前用户的 role 选:
+    #   - PSO sender 跑 OprfRecver.eval → oprf_prf_sender.txt
+    #   - PSO receiver 跑 OprfSender.eval → oprf_prf_recver.txt
+    # ALICE = PSO sender (proto 里的 'receiver' 角色), BOB = PSO receiver (proto 里的 'sender' 角色)
+    if not ciphertext_preview:
+        oprf_filename = 'oprf_prf_sender.txt' if role == 'receiver' else 'oprf_prf_recver.txt'
+        oprf_preview, oprf_full = _read_first_n(
+            os.path.join(kunlun_dir, oprf_filename))
+        if oprf_preview:
+            ciphertext_preview = oprf_preview
+            ciphertext_full = oprf_full
+
+    # 第二次 fallback: 仍没就退化到 group.uploads 里的 numbers(标准 hash 后的 uint64)
     if not ciphertext_preview:
         for u in (group.get('uploads') or []):
             if u.get('username') == username and u.get('numbers'):
