@@ -2758,7 +2758,7 @@ body > .sidebar {
 }
 
 
-/* ---------- 安全多方求交 (SS-PSI) ---------- */
+/* ---------- 秘密共享交集 (SS-PSI) ---------- */
 .ss-psi-page * {
     margin: 0;
     padding: 0;
@@ -3410,7 +3410,7 @@ body > .sidebar {
     <div class="nav-btn" onclick="showPage('psiMatch')">集合匹配</div>
     <div class="nav-btn" onclick="showPage('psiUnion')">隐私求并</div>
     <div class="nav-btn" onclick="showPage('psiSum')">隐私求和</div>
-    <div class="nav-btn" onclick="showPage('ssPsi')">安全多方求交</div>
+    <div class="nav-btn" onclick="showPage('ssPsi')">秘密共享交集</div>
     <div class="nav-btn" onclick="showPage('settings')">设置</div>
     <div class="nav-btn hidden" id="adminNavBtn" onclick="showPage('admin')">用户管理</div>
 </div>
@@ -3430,7 +3430,7 @@ body > .sidebar {
                 <li>隐私求并 (PSU) - 输出完整并集, 双方对称可见明文</li>
                 <li>隐私集合匹配 (PSI-Card) - 子集判定, 返回交集基数与缺失数</li>
                 <li>隐私求和 (PSI-Sum) - 交集元素的关联数值求和</li>
-                <li>安全多方求交 (SS-PSI) - 四方场景求共同交集</li>
+                <li>秘密共享交集 (SS-PSI) - 双方输出交集的秘密份额，需合作恢复明文</li>
                 <li>管理员用户管理功能</li>
             </ul>
             <p style="margin-top: 15px; color: #666;">请点击左侧导航栏使用各项功能。</p>
@@ -4232,7 +4232,7 @@ body > .sidebar {
     </div>
 </div>
 
-<!-- ==================== SS-PSI 演示页面 (Mock, 2026-07-05, 仿 PSI_INT UX 多方版) ==================== -->
+<!-- ==================== 秘密共享交集演示页面 (Mock, 2026-07-05, 仿 PSI_INT UX 多方版) ==================== -->
 <div id="ssPsiPage" class="ss-psi-page" style="display:none;">
     <div class="main-container">
         <div class="sidebar">
@@ -4240,7 +4240,7 @@ body > .sidebar {
             <!-- 视图 1: 创建/加入 + 我的小组 -->
             <div id="ssPsiView1">
                 <div class="card">
-                    <h2>创建或加入多方求交小組</h2>
+                    <h2>创建或加入秘密共享交集小组</h2>
                     <div class="form-group">
                         <label>小组名称（创建新小组）</label>
                         <input type="text" id="ssPsiGroupNameInput" placeholder="输入小组名称" maxlength="50">
@@ -4264,7 +4264,7 @@ body > .sidebar {
                 </div>
 
                 <div class="card">
-                    <h2>我的多方求交小組</h2>
+                    <h2>我的秘密共享交集小组</h2>
                     <ul class="psi-group-list" id="ssPsiMyGroupList">
                         <li class="empty-state">加载中...</li>
                     </ul>
@@ -4313,13 +4313,13 @@ body > .sidebar {
                 </div>
 
                 <div class="card" id="ssPsiStartCard" style="display:none;">
-                    <h2>🚀 开始多方求交</h2>
-                    <p style="color: #666; margin-bottom: 10px;">所有参与方已上传, 点击下方按钮触发安全多方求交 (演示模式)。</p>
-                    <button class="btn btn-success" id="ssPsiStartBtn" onclick="SS_PSI.start()">▶ 开始安全多方求交</button>
+                    <h2>🚀 开始秘密共享交集</h2>
+                    <p style="color: #666; margin-bottom: 10px;">所有参与方已上传, 点击下方按钮触发秘密共享交集 (Mock 演示模式)。</p>
+                    <button class="btn btn-success" id="ssPsiStartBtn" onclick="SS_PSI.start()">▶ 开始秘密共享交集</button>
                 </div>
 
                 <div class="card" id="ssPsiResultCard" style="display:none;">
-                    <h2>🎯 多方求交结果</h2>
+                    <h2>🎯 秘密共享交集结果</h2>
                     <div style="background: #e8f4e8; padding: 20px; border-radius: 6px; margin-top: 10px;">
                         <p style="margin-bottom: 10px;">共同交集大小 (cardinality): <strong id="ssPsiCardinality" style="font-size: 20px; color: #5a8a3a;"></strong></p>
                         <p style="margin-bottom: 10px;">共同交集元素:</p>

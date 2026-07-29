@@ -1,4 +1,4 @@
-# protocols/ss_psi.py — SS-PSI (2-party secret-shared PSI) 协议
+# protocols/ss_psi.py — SS-PSI (Secret-Shared PSI 秘密共享交集) 协议
 # SPIKE 5: 从 Kunlun 4-party mock 切换到 sPSO 2-party 真协议
 # 协议语义:
 #   - alice (creator = party1) 提供 party1.txt (her set)
@@ -56,7 +56,7 @@ class SSPSIGroupManager(BaseGroupManager):
 
 
 class SpsoSSPSI(KunlunRunner):
-    """sPSO SS-PSI runner (2-party secret-shared PSI)。
+    """sPSO SS-PSI runner (2-party secret-shared PSI / 秘密共享交集)。
 
     SPIKE 5 实现:
     - 调用 spso_runner --mode ss_psi

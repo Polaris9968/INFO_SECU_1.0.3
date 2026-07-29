@@ -128,7 +128,8 @@ PROTOCOL_SS_PSI = ProtocolSpec(
     protocol_id='ss_psi',
     url_prefix='/api/ss-psi-groups',                   # ★ 复数
     manager_cls=SSPSIGroupManager,
-    page_filename='ss_psi.html',                       # 前端页面(待确认)
+    # SPIKE 5 (2026-07-30):page_filename='ss_psi.html' 已删除 — 该文件不存在,
+    # SS-PSI UI 全在 home.html 的嵌入容器 + home-psi-pages.js 的 window.SS_PSI IIFE
     upload_data_dir_attr='KUNLUN_SS_PSI_DATA_DIR',
     id_length=4,
     max_members=2,  # SPIKE 5: 2-party
