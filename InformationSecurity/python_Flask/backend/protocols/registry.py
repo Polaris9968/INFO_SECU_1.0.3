@@ -128,8 +128,10 @@ PROTOCOL_SS_PSI = ProtocolSpec(
     protocol_id='ss_psi',
     url_prefix='/api/ss-psi-groups',                   # ★ 复数
     manager_cls=SSPSIGroupManager,
-    # SPIKE 5 (2026-07-30):page_filename='ss_psi.html' 已删除 — 该文件不存在,
-    # SS-PSI UI 全在 home.html 的嵌入容器 + home-psi-pages.js 的 window.SS_PSI IIFE
+    page_filename=None,  # SPIKE 5 (2026-07-30):dead ref, ss_psi.html 文件从未存在,
+                         # SS-PSI UI 全在 home.html 嵌入 + window.SS_PSI IIFE
+                         # 必须传 (ProtocolSpec.__init__ 必填位置参数),
+                         # 但 routes.py 不读这个字段,所以 None 是安全的
     upload_data_dir_attr='KUNLUN_SS_PSI_DATA_DIR',
     id_length=4,
     max_members=2,  # SPIKE 5: 2-party
