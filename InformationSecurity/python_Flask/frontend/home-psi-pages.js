@@ -3318,6 +3318,77 @@ window.SS_PSI = (function() {
         document.getElementById('ssPsiUploadBtn').disabled = true;
         renderFromDetail();
         startPolling();
+        loadSSPsiHistory();  // 2026-07-31: 进入组时拉历史 tab 计数
+    }
+
+    // 2026-07-31 哥要历史记录 UI (仿 PSI-Sum)
+    function switchTab(tab) {
+        const currentTabEl = document.getElementById('ssPsiCurrentTab');
+        const historyTabEl = document.getElementById('ssPsiHistoryTab');
+        const tabCurrentBtn = document.getElementById('ssPsiTabCurrent');
+        const tabHistoryBtn = document.getElementById('ssPsiTabHistory');
+        if (!currentTabEl) return;
+        if (tab === 'current') {
+            currentTabEl.style.display = 'block';
+            if (historyTabEl) historyTabEl.style.display = 'none';
+            if (tabCurrentBtn) tabCurrentBtn.classList.add('active');
+            if (tabHistoryBtn) tabHistoryBtn.classList.remove('active');
+        } else {
+            currentTabEl.style.display = 'none';
+            if (historyTabEl) historyTabEl.style.display = 'block';
+            if (tabCurrentBtn) tabCurrentBtn.classList.remove('active');
+            if (tabHistoryBtn) tabHistoryBtn.classList.add('active');
+            loadSSPsiHistory();  // 切到历史 tab 时刷新
+        }
+    }
+
+    async function loadSSPsiHistory() {
+        if (!currentGroupId) return;
+        try {
+            const result = await apiGetSSPSIGroupHistory(currentGroupId);
+            if (result.success) {
+                const rounds = result.rounds || [];
+                const countEl = document.getElementById('ssPsiHistoryCount');
+                if (countEl) countEl.innerText = rounds.length;
+                const tabHistoryBtn = document.getElementById('ssPsiTabHistory');
+                if (tabHistoryBtn) tabHistoryBtn.style.display = rounds.length > 0 ? 'inline-block' : 'none';
+                const list = document.getElementById('ssPsiHistoryList');
+                if (!list) return;
+                if (rounds.length === 0) {
+                    list.innerHTML = '<div class="empty-state">暂无历史记录<br><span class="hint-text">点击 "💾 保存当前结果,开始下一轮" 后会出现历史</span></div>';
+                    return;
+                }
+                const reversed = [...rounds].reverse();
+                list.innerHTML = reversed.map(r => {
+                    const resultInfo = r.result || {};
+                    const dur = r.computation_human ? `⏱ ${r.computation_human}` : '';
+                    return `
+                        <div class="round-item">
+                            <div class="round-header">
+                                <span class="round-title">第 ${r.round} 轮</span>
+                                <span class="round-meta">${r.completed_at} · 由 ${r.completed_by} 保存${dur ? ' · ' + dur : ''}</span>
+                            </div>
+                            <div class="round-body">
+                                <span>我的集合: <strong>${r.my_upload_count}</strong> 个</span>
+                                <span style="margin-left: 20px;">我的份额: <strong>${resultInfo.cuckoo_size ?? resultInfo.cardinality_hint ?? '-'}</strong> 个 (128-bit block)</span>
+                                <span style="margin-left: 20px;">交集基数: <strong>${resultInfo.cardinality_hint ?? resultInfo.cardinality ?? '-'}</strong></span>
+                            </div>
+                            <div class="round-actions">
+                                <button class="btn btn-primary" onclick="SS_PSI.downloadRoundFile(${r.round}, 'my_plaintext')">📥 我的明文</button>
+                                <button class="btn btn-success" onclick="SS_PSI.downloadRoundFile(${r.round}, 'my_share')">📥 我的份额</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            console.error('SS-PSI 历史加载失败:', err);
+        }
+    }
+
+    function downloadRoundFile(roundNum, fileType) {
+        if (!currentGroupId) return;
+        apiDownloadSSPSIRoundFile(currentGroupId, roundNum, fileType);
     }
     function renderFromDetail() {
         if (!currentGroupDetail) return;
@@ -3498,6 +3569,7 @@ window.SS_PSI = (function() {
                 alert(`✓ 已保存到第 ${j.round_record?.round || '?'} 轮, 现在双方可以重新上传文件`);
                 const detail = await loadGroupDetail(currentGroupId);
                 if (detail) { currentGroupDetail = detail; renderFromDetail(); }
+                await loadSSPsiHistory();  // 2026-07-31: 刷新历史列表
             } else {
                 alert('归档失败: ' + (j.error || '未知错误'));
             }
@@ -3551,5 +3623,5 @@ window.SS_PSI = (function() {
         }
     }
 
-    return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, downloadResult, saveAndStartNewRound, handleFileSelected, _loadMyGroups: loadMyGroups, stop: stopPolling };
+    return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, downloadResult, saveAndStartNewRound, switchTab, loadSSPsiHistory, downloadRoundFile, handleFileSelected, _loadMyGroups: loadMyGroups, stop: stopPolling };
 })();

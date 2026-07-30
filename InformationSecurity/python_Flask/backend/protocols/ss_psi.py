@@ -7,6 +7,7 @@
 #   - z ⊕ r = 交集元素 (uint64),反查到原始 token
 #   - 双方都拿到交集 (明文),但协议层是份额输出
 
+import os
 from app import Config
 from .base import BaseGroupManager, KunlunRunner
 from datetime import datetime
@@ -48,6 +49,45 @@ class SSPSIGroupManager(BaseGroupManager):
         'share_sender.txt', 'share_receiver.txt',
         'intersection.txt',  # 旧 mock 时代残余,保险归档
     )
+    # SS-PSI 历史下载 file_type 映射 (2026-07-31 哥要 UI 历史记录)
+    # 归档 key 由 archive_filenames 自动用 .txt 后缀替换得到:
+    #   party1.txt -> 'party1', share_sender.txt -> 'share_sender', etc.
+    file_type_map = {
+        # 角色 share: receiver (creator) -> share_receiver, sender (joiner) -> share_sender
+        'my_share':           lambda role, **kw: 'share_receiver' if role == 'receiver' else 'share_sender',
+        # 双方原始明文(PSI 协议都支持)
+        'my_plaintext':       lambda role, **kw: 'original_party1' if role == 'receiver' else 'original_party2',
+        # 基数结果(实际从 result 字段返回,不下载文件)
+        'result_cardinality': None,  # 不支持文件下载,前端从 r.result.cardinality_hint 读
+    }
+
+    # SS-PSI 协议特定:归档后 round_record.result 不是 intersection, 而是 secret share 摘要
+    # (论文 §5.2: share 是双方各持一份, XOR 才是交集, 所以 round 不存明文交集)
+    # 卡片上显示: cardinality_hint + cuckoo_size
+    @classmethod
+    def _read_finalized_result(cls, archive_files, kunlun_dir, group):
+        # share_receiver.txt 一行一个 share, count = cuckoo size
+        # cardinality_hint 在 finalize 时 group['result'] 还在 (pending_computation 还没清)
+        # 取 cardinality_hint: 优先从 group['result'] 读, fallback 算 share_receiver 非空行数
+        cuckoo_size = 0
+        share_path = archive_files.get('share_receiver')
+        if share_path and os.path.exists(share_path):
+            with open(share_path, 'r', encoding='utf-8') as f:
+                cuckoo_size = sum(1 for line in f if line.strip())
+        card_hint = 0
+        g_result = group.get('result') or {}
+        if isinstance(g_result, dict):
+            card_hint = g_result.get('cardinality_hint', 0) or 0
+        return {
+            'intersection_or_values': [],  # SS-PSI 无明文交集
+            'summary': {
+                'type': 'ss_psi_shares',
+                'cardinality_hint': card_hint,
+                'cuckoo_size': cuckoo_size,
+                'share_sender_path': archive_files.get('share_sender'),
+                'share_receiver_path': archive_files.get('share_receiver'),
+            },
+        }
     stale_filenames = (
         'party1.txt', 'party2.txt',
         'original_party1.txt', 'original_party2.txt',

@@ -4275,6 +4275,15 @@ body > .sidebar {
             <div id="ssPsiView2" style="display:none;">
                 <button class="btn btn-secondary back-btn" onclick="SS_PSI.backToList()">← 返回小组列表</button>
 
+                <!-- Tab 切换 (2026-07-31: 历史记录 UI) -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" id="ssPsiTabCurrent" onclick="SS_PSI.switchTab('current')">📋 当前操作</button>
+                    <button class="tab-btn" id="ssPsiTabHistory" onclick="SS_PSI.switchTab('history')" style="display:none;">📚 历史记录 (<span id="ssPsiHistoryCount">0</span>)</button>
+                </div>
+
+                <!-- 当前操作 tab 内容包装 -->
+                <div id="ssPsiCurrentTab" class="tab-content">
+
                 <div class="card group-info-card">
                     <h2>🔒 <span id="ssPsiCurrentGroupName"></span></h2>
                     <div class="psi-group-code" id="ssPsiCurrentGroupId">ABCD</div>
@@ -4362,7 +4371,14 @@ body > .sidebar {
                     </div>
                 </div>
 
-            </div>
+                </div><!-- /ssPsiCurrentTab -->
+
+                <!-- 历史记录 tab (2026-07-31: 哥要 UI 历史记录) -->
+                <div id="ssPsiHistoryTab" class="tab-content" style="display:none;">
+                    <div id="ssPsiHistoryList" class="history-list"></div>
+                </div>
+
+            </div><!-- /ssPsiView2 -->
 <script src="./api.js"></script>
 <script src="./home.js"></script>
 <script src="./home-psi-pages.js"></script>
