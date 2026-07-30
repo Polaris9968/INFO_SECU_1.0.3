@@ -270,6 +270,9 @@ int main(int argc, char** argv) {
     uint64_t q = 1ULL << 50;
     std::string input_dir;
     std::string output_file;
+    // 2026-07-30 Friday fix: SS-PSI mode 用 out 参数拿到两份额,需要预先声明
+    std::vector<std::string> ss_share_sender_out;
+    std::vector<std::string> ss_share_receiver_out;
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--mode") == 0 && i+1 < argc) {
@@ -403,7 +406,8 @@ int main(int argc, char** argv) {
             close(pipefd[1]);
 
             run_pso(mode, /*print_sets=*/false, payload, p, q,
-                    &sender_set, &recver_set);
+                    &sender_set, &recver_set,
+                    &ss_share_sender_out, &ss_share_receiver_out);
 
             // Restore stdout
             fflush(stdout);
@@ -424,7 +428,11 @@ int main(int argc, char** argv) {
             std::vector<uint64_t> union_u64;
             uint64_t cardinality_u64 = 0;
             uint64_t sum_u64 = 0;   // SPIKE 4
-            if (mode == MODE_PSI || mode == MODE_SS_PSI) {
+            // 2026-07-30 Friday fix: SS-PSI mode 不再解析 INTERSECTION 块(论文§5.2 是 secret shares 输出,
+            // 不是明文交集)。out 参数已通过 run_pso 拿到 ss_share_sender_out / ss_share_receiver_out
+            if (mode == MODE_SS_PSI) {
+                // 跳过 INTERSECTION 解析,下面专门处理 share 文件
+            } else if (mode == MODE_PSI) {
                 inter_u64 = parse_intersection_block(captured_stdout);
             } else if (mode == MODE_PSU) {
                 union_u64 = parse_union_block(captured_stdout);
@@ -438,7 +446,8 @@ int main(int argc, char** argv) {
 
             std::cerr << "[spso_runner] mode=" << mode_name(mode)
                       << " recovered (uint64): "
-                      << ((mode == MODE_PSI || mode == MODE_SS_PSI) ? std::to_string(inter_u64.size()) + " elements"
+                      << (mode == MODE_PSI ? std::to_string(inter_u64.size()) + " elements"
+                          : mode == MODE_SS_PSI ? std::to_string(ss_share_sender_out.size()) + " shares per party"
                           : mode == MODE_PSU ? std::to_string(union_u64.size()) + " union elements"
                           : mode == MODE_CARD ? std::to_string(cardinality_u64) + " cardinality"
                           : mode == MODE_PSI_SUM ? std::to_string(sum_u64) + " sum (mod q)"
@@ -480,7 +489,7 @@ int main(int argc, char** argv) {
 
             uint64_t not_found = 0;
             std::vector<std::string> recovered_orig;
-            if (mode == MODE_PSI || mode == MODE_SS_PSI) {
+            if (mode == MODE_PSI) {
                 recovered_orig.reserve(inter_u64.size());
                 for (uint64_t v : inter_u64) {
                     auto it = u64_to_orig.find(v);
@@ -520,7 +529,39 @@ int main(int argc, char** argv) {
             }
 
             // Write output file
-            if (!output_file.empty()) {
+            // 2026-07-30 Friday fix: SS-PSI mode 输出两份 share 文件 (share_sender.txt + share_receiver.txt)
+            // 其他 mode 仍然写 recovered_orig 到 output_file
+            if (mode == MODE_SS_PSI) {
+                if (input_dir.empty()) {
+                    std::cerr << "[spso_runner] ERROR: SS-PSI mode requires --input-dir "
+                              << "(写 share_sender.txt / share_receiver.txt 到该目录)\n";
+                    return 1;
+                }
+                const std::string share_sender_path = input_dir + "/share_sender.txt";
+                const std::string share_receiver_path = input_dir + "/share_receiver.txt";
+                std::ofstream ofs(share_sender_path);
+                if (!ofs) {
+                    std::cerr << "[spso_runner] cannot open share file: "
+                              << share_sender_path << "\n";
+                    return 1;
+                }
+                for (const auto& s : ss_share_sender_out) ofs << s << "\n";
+                ofs.close();
+                std::ofstream ofr(share_receiver_path);
+                if (!ofr) {
+                    std::cerr << "[spso_runner] cannot open share file: "
+                              << share_receiver_path << "\n";
+                    return 1;
+                }
+                for (const auto& s : ss_share_receiver_out) ofr << s << "\n";
+                ofr.close();
+                std::cerr << "[spso_runner] SS-PSI wrote "
+                          << ss_share_sender_out.size() << " sender shares to "
+                          << share_sender_path << "\n"
+                          << "[spso_runner] SS-PSI wrote "
+                          << ss_share_receiver_out.size() << " receiver shares to "
+                          << share_receiver_path << "\n";
+            } else if (!output_file.empty()) {
                 std::ofstream of(output_file);
                 if (!of) {
                     std::cerr << "[spso_runner] cannot open output file: "

@@ -260,7 +260,9 @@ static void recver_setup_phase(
 void run_pso(PSOMode mode, bool print_sets,
              std::vector<uint64_t> payload, uint64_t p_in, uint64_t q_in,
              const std::vector<uint64_t>* sender_set_in,
-             const std::vector<uint64_t>* recver_set_in) {
+             const std::vector<uint64_t>* recver_set_in,
+             std::vector<std::string>* out_ss_share_sender,
+             std::vector<std::string>* out_ss_share_receiver) {
     // ---------------------------- parameters ----------------------------
     // SPIKE 2: when sender_set_in / recver_set_in are provided, use them as
     // protocol input (skipping set_gen). When null, fall back to random sets.
@@ -902,6 +904,30 @@ void run_pso(PSOMode mode, bool print_sets,
             cout << "=== PSI_SUM_VALUE: " << captured_sum << " ===" << endl;
         }
         cout.flush();
+    }
+
+    // 2026-07-30 Friday fix: SS-PSI mode 输出两份额 (sender 的 r_i, receiver 的 z_i)
+    // 两份额各自 128-bit block → 32 hex chars
+    // 每方拿到自己的份额:单独一方拿不到明文交集(避免泄漏)
+    if (mode == MODE_SS_PSI) {
+        auto block_to_hex = [](const block& b) {
+            std::ostringstream oss;
+            uint64_t hi = b.get<uint64_t>(0);
+            uint64_t lo = b.get<uint64_t>(1);
+            oss << std::hex << std::setw(16) << std::setfill('0') << hi
+                << std::setw(16) << std::setfill('0') << lo;
+            return oss.str();
+        };
+        if (out_ss_share_sender && !ss_r_captured.empty()) {
+            out_ss_share_sender->clear();
+            out_ss_share_sender->reserve(ss_r_captured.size());
+            for (const auto& b : ss_r_captured) out_ss_share_sender->push_back(block_to_hex(b));
+        }
+        if (out_ss_share_receiver && !ss_z_captured.empty()) {
+            out_ss_share_receiver->clear();
+            out_ss_share_receiver->reserve(ss_z_captured.size());
+            for (const auto& b : ss_z_captured) out_ss_share_receiver->push_back(block_to_hex(b));
+        }
     }
 }
 

@@ -480,11 +480,7 @@ body {
 
         <div class="card">
             <h2>我的匹配小组</h2>
-            <div class="auto-refresh" style="margin-bottom: 10px;">
-                <div class="refresh-dot"></div>
-                <span>自动刷新中</span>
-            </div>
-            <ul class="group-list" id="myPSIMatchGroupList">
+            <ul class="psi-group-list" id="myPSIMatchGroupList">
                 <li class="empty-state">加载中...</li>
             </ul>
         </div>
@@ -503,7 +499,7 @@ body {
         <div id="currentPSIMatchGroupSection" class="hidden">
             <div class="card group-info-card">
                 <h2>🔒 <span id="currentPSIMatchGroupName"></span></h2>
-                <div class="group-code" id="currentPSIMatchGroupId">ABCD</div>
+                <div class="psi-group-code" id="currentPSIMatchGroupId">ABCD</div>
                 <div class="group-info-item">
                     <span class="group-info-label">组长</span>
                     <span class="group-info-value" id="psiMatchGroupCreator"></span>
@@ -519,7 +515,7 @@ body {
             </div>
 
             <div class="card">
-                <h2>👥 小组成员</h2>
+                <h2>👥 成员状态</h2>
                 <div class="member-list" id="psiMatchMemberList">
                 </div>
             </div>

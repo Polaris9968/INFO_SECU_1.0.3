@@ -2861,6 +2861,9 @@ window.PSI_SUM = (function() {
         }
         const startBtn = $('psiSumStartBtn');
         if (startBtn) {
+            // 2026-07-30 Friday fix: HTML 里按钮带 'hidden' class,必须 classList.remove 才能看到
+            if (allUploaded && isCreator) startBtn.classList.remove('hidden');
+            else startBtn.classList.add('hidden');
             if (detail.cardinality_result !== null && detail.cardinality_result !== undefined) {
                 startBtn.disabled = true;
                 startBtn.textContent = '✓ 已完成';
@@ -2904,6 +2907,13 @@ window.PSI_SUM = (function() {
         const resultCard = $('psiSumResultCard');
         if (!resultCard) return;
         resultCard.style.display = 'block';
+        // 2026-07-30 Friday fix: 统一 psi-stats 加 我的/对方 元素数
+        const myUp = detail.my_upload || {};
+        const otherUp = detail.other_upload || {};
+        const myUpCountEl = $('psiSumMyCount');
+        const otherUpCountEl = $('psiSumOtherCount');
+        if (myUpCountEl) myUpCountEl.textContent = myUp.count ?? myUp.items?.length ?? '-';
+        if (otherUpCountEl) otherUpCountEl.textContent = otherUp.count ?? otherUp.items?.length ?? '-';
         $('psiSumCardinality').textContent = detail.cardinality_result ?? '-';
         $('psiSumSum').textContent = detail.sum_result || '-';
         const durEl = $('psiSumDuration');
@@ -3169,7 +3179,8 @@ window.PSI_SUM = (function() {
         downloadRoundFile,
         handleSetFileSelected,
         handleValueFileSelected,
-        _loadMyGroups: loadMyGroups
+        _loadMyGroups: loadMyGroups,
+        stop: stopPolling
     };
 })();
 // SS_PSI IIFE (真实后端 4 方小组管理, 仅运算 mock)
@@ -3253,10 +3264,11 @@ window.SS_PSI = (function() {
         const name = document.getElementById('ssPsiGroupNameInput').value.trim();
         if (!name) { alert('请输入小组名称'); return; }
         try {
-            const j = await api('/api/ss-psi-groups', { method: 'POST', body: { name } });
+            // 2026-07-30 Friday fix: 路径应为 /create 后缀,与 routes.py register_routes 对齐
+            const j = await api('/api/ss-psi-groups/create', { method: 'POST', body: { name } });
             document.getElementById('ssPsiGroupNameInput').value = '';
             await loadMyGroups();
-            alert(`✓ 多方小组已创建\n名称: ${j.group.name}\nID: ${j.group.id}\n需 4 方全部加入, 将 ID 告诉其他参与方`);
+            alert(`✓ 多方小组已创建\n名称: ${j.group.name}\nID: ${j.group.id}\n需 2 方全部加入, 将 ID 告诉其他参与方`);
             enterGroup(j.group.id);
         } catch (err) {
             alert('创建失败: ' + err.message);
@@ -3266,6 +3278,7 @@ window.SS_PSI = (function() {
         const id = document.getElementById('ssPsiGroupIdInput').value.trim().toUpperCase().slice(0, 4);
         if (!id) { alert('请输入小组 ID'); return; }
         try {
+            // 2026-07-30 Friday fix: 后端 _make_join_handler 对 ss_psi 特殊处理 → body 用 group_id(不是 groupId)
             const j = await api('/api/ss-psi-groups/join', { method: 'POST', body: { group_id: id } });
             if (!j.success) { alert('加入失败: ' + (j.message || '未知错误')); return; }
             document.getElementById('ssPsiGroupIdInput').value = '';
@@ -3311,15 +3324,22 @@ window.SS_PSI = (function() {
         const g = currentGroupDetail;
         const me = getUsername();
         const uploadedNames = new Set(g.uploads.map(u => u.username));
-        const roleNames = ['party_A', 'party_B', 'party_C', 'party_D'];
+        // 2026-07-30 Friday fix: SS-PSI 是 2-party(不是 4-party mock),role 用 receiver/sender
+        const roleNames = ['receiver', 'sender'];
         const members = g.members.map((name, idx) => ({
             name,
             uploaded: uploadedNames.has(name),
             isMe: name === me,
             role: roleNames[idx] || `party_${idx + 1}`
         }));
-        const totalParties = g.expected_parties || 4;
+        const totalParties = g.expected_parties || 2;
+        const meUpload = g.uploads.find(u => u.username === me);
+        const otherUpload = g.uploads.find(u => u.username !== me);
+
+        // group-info-card
         document.getElementById('ssPsiMemberCount').textContent = `${g.members.length} / ${totalParties} 方`;
+
+        // 成员状态(复用 PSI_INT 模板)
         document.getElementById('ssPsiMemberStatus').innerHTML = members.map(m => `
             <div class="member-status">
                 <span><strong>${m.name}${m.isMe ? ' (我)' : ''}</strong> · <em>${m.role}</em></span>
@@ -3332,35 +3352,92 @@ window.SS_PSI = (function() {
         const pct = g.members.length ? Math.round((uploadedCount / g.members.length) * 100) : 0;
         document.getElementById('ssPsiProgressFill').style.width = pct + '%';
         const allUploaded = g.members.length === totalParties && uploadedCount === totalParties;
-        const myUploaded = uploadedNames.has(me);
+        const myUploaded = !!meUpload;
         document.getElementById('ssPsiUploadBtn').disabled = g.members.length < totalParties || myUploaded;
         document.getElementById('ssPsiStartCard').style.display = allUploaded ? 'block' : 'none';
+        // 2026-07-30 Friday fix: HTML 里按钮带 'hidden' class,必须 classList.remove 才能看到
+        const ssStartBtn = document.getElementById('ssPsiStartBtn');
+        if (ssStartBtn) {
+            if (allUploaded) ssStartBtn.classList.remove('hidden');
+            else ssStartBtn.classList.add('hidden');
+        }
         const remainText = g.members.length < totalParties
             ? `⏳ 等待其他参与方加入 (${g.members.length}/${totalParties})...`
             : (myUploaded ? '⏳ 等待其他参与方上传...' : '📤 请上传你的文件');
         document.getElementById('ssPsiProgressText').textContent = allUploaded ? '✓ 所有参与方已上传, 可以开始运算' : remainText;
-        // 参与方表
-        if (g.uploads.length > 0) {
-            document.getElementById('ssPsiParticipants').innerHTML = members.map(m => {
-                const up = g.uploads.find(u => u.username === m.name);
-                const cnt = up ? up.count : '-';
-                return `<tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${m.name}${m.isMe ? ' (我)' : ''}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${cnt}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #eee;">${m.role}</td>
-                </tr>`;
-            }).join('');
-            document.getElementById('ssPsiParticipantsCard').style.display = 'block';
+
+        // 2026-07-30: 统一 psi-stats(复用 PSI_INT 模板)
+        document.getElementById('ssPsiMyCount').textContent = meUpload ? meUpload.count : '0';
+        document.getElementById('ssPsiOtherCount').textContent = otherUpload ? otherUpload.count : '0';
+
+        // 明文前 20: 从 my_upload.original_items 取(后端存的原始 token)
+        const opPreview = meUpload ? (meUpload.original_items || []).slice(0, 20) : [];
+        if (opPreview.length > 0) {
+            const opLines = opPreview.map((v, i) => `${i + 1}. ${v}`);
+            if (meUpload && meUpload.count > opPreview.length) opLines.push(`... 合计 ${meUpload.count} 个`);
+            document.getElementById('ssPsiPlaintextPreview').textContent = opLines.join('\n');
+            document.getElementById('ssPsiPlaintextPreviewContainer').style.display = 'block';
+        } else {
+            document.getElementById('ssPsiPlaintextPreviewContainer').style.display = 'none';
         }
+
+        // 结果展示
         if (g.result) renderResult(g.result);
+        else {
+            document.getElementById('ssPsiCommonCount').textContent = '0';
+            document.getElementById('ssPsiResultPreviewContainer').style.display = 'none';
+            document.getElementById('ssPsiDurationStatItem').style.display = 'none';
+            document.getElementById('ssPsiDownloadBtn').style.display = 'none';
+        }
+
+        // 操作按钮: 组长显示解散
+        const isCreator = g.creator === me;
+        const deleteBtn = document.getElementById('ssPsiDeleteGroupBtn');
+        if (deleteBtn) {
+            if (isCreator) deleteBtn.classList.remove('hidden');
+            else deleteBtn.classList.add('hidden');
+        }
     }
     function renderResult(result) {
-        document.getElementById('ssPsiIntersection').textContent = (result.intersection || []).join('\n');
-        document.getElementById('ssPsiCardinality').textContent = result.cardinality ?? '-';
-        document.getElementById('ssPsiParticipantsCard').style.display = 'block';
-        document.getElementById('ssPsiResultCard').style.display = 'block';
+        // 2026-07-30 SPIKE 6 Option A: 真实 secret shares (不再显示明文交集)
+        // 论文 §5.2: 双方各持一份 share, XOR 才是交集 (任一方单独拿不到明文)
+        // - creator (party1) = receiver -> 持有 share_receiver (z_i)
+        // - joiner  (party2) = sender   -> 持有 share_sender   (r_i)
+        const me = sessionStorage.getItem('username');
+        const isReceiver = currentGroupDetail && currentGroupDetail.group && currentGroupDetail.group.creator === me;
+        const myShare = isReceiver ? (result.share_receiver || []) : (result.share_sender || []);
+        const myRoleLabel = isReceiver ? 'receiver (z_i)' : 'sender (r_i)';
+
+        // 显示交集基数 (cardinality_hint = XOR 非零的 bin 数 = 真实交集大小)
+        const cardHint = result.cardinality_hint ?? result.cardinality ?? 0;
+        document.getElementById('ssPsiCommonCount').textContent = cardHint;
+
+        if (myShare.length > 0) {
+            // 显示前 20 个 share (32 hex chars 一行)
+            const preview = myShare.slice(0, 20);
+            const resultLines = preview.map((v, i) => `${i + 1}. ${v}`);
+            if (myShare.length > 20) resultLines.push(`... 合计 ${myShare.length} 个份额`);
+            resultLines.unshift(`[你的角色: ${myRoleLabel}]`);
+            resultLines.push('');
+            resultLines.push(`提示: 你的份额(${myShare.length} 个 128-bit block)单独不暴露交集`);
+            resultLines.push(`      与对方 share XOR 后 = 交集 token (X*[π(i)]) 或 0 (非命中)`);
+            document.getElementById('ssPsiResultPreview').textContent = resultLines.join('\n');
+            document.getElementById('ssPsiResultPreviewContainer').style.display = 'block';
+            document.getElementById('ssPsiDownloadBtn').style.display = 'inline-block';
+            document.getElementById('ssPsiDownloadBtn').textContent = '📥 下载我的份额';
+        }
+        if (result.duration_human) {
+            document.getElementById('ssPsiDurationStat').textContent = result.duration_human;
+            document.getElementById('ssPsiDurationStatItem').style.display = 'block';
+        }
         const btn = document.getElementById('ssPsiStartBtn');
         if (btn) { btn.disabled = true; btn.textContent = '✓ 已完成'; }
+        // 隐藏触发运算卡的提示文本(已运算)
+        const startCard = document.getElementById('ssPsiStartCard');
+        if (startCard && result.computed_at) {
+            const p = startCard.querySelector('p');
+            if (p) p.textContent = `✓ 已于 ${result.computed_at} 完成 (by ${result.computed_by || 'sPSO'}) - SPIKE 6 秘密共享`;
+        }
     }
 
     async function uploadFile() {
@@ -3369,9 +3446,11 @@ window.SS_PSI = (function() {
         if (!file) { alert('请先选择文件'); return; }
         if (!currentGroupId) { alert('小组未加载'); return; }
         try {
+            // 2026-07-30 Friday fix: upload 路径不带 group_id(后端从 form 取),start 路径补 -computation 后缀
             const fd = new FormData();
             fd.append('file', file);
-            const j = await api(`/api/ss-psi-groups/${currentGroupId}/upload`, { method: 'POST', body: fd });
+            fd.append('groupId', currentGroupId);
+            const j = await api(`/api/ss-psi-groups/upload`, { method: 'POST', body: fd });
             document.getElementById('ssPsiUploadStatus').textContent = `✓ ${file.name} (${j.count} 条)`;
             document.getElementById('ssPsiUploadStatus').style.color = '#5a8a3a';
             const detail = await loadGroupDetail(currentGroupId);
@@ -3386,16 +3465,48 @@ window.SS_PSI = (function() {
         btn.disabled = true;
         btn.textContent = '⏳ 运算中...';
         try {
-            const j = await api(`/api/ss-psi-groups/${currentGroupId}/start`, { method: 'POST' });
-            renderResult(j.result);
+            const j = await api(`/api/ss-psi-groups/${currentGroupId}/start-computation`, { method: 'POST' });
+            // 2026-07-30 Friday fix: 后端 response.update(result) 扁平化到顶层(j.intersection / j.cardinality),
+            // 不存在 j.result 字段。直接传 j 给 renderResult,不要用 j.result(会 undefined.intersection 报错)
+            renderResult(j);
             const detail = await loadGroupDetail(currentGroupId);
             if (detail) { currentGroupDetail = detail; renderFromDetail(); }
         } catch (err) {
             alert('运算失败: ' + err.message);
             btn.disabled = false;
-            btn.textContent = '🚀 开始运算';
+            btn.textContent = '▶ 开始秘密共享交集';
         }
     }
+    function handleFileSelected(inputEl) {
+        if (!inputEl || !inputEl.files[0]) return;
+        const textEl = inputEl.parentElement.querySelector('.upload-text');
+        if (textEl) textEl.textContent = '✓ 已选择: ' + inputEl.files[0].name;
+        document.getElementById('ssPsiUploadBtn').disabled = false;
+    }
+    async function downloadResult() {
+        if (!currentGroupId || !currentGroupDetail || !currentGroupDetail.result) {
+            alert('尚无结果可下载'); return;
+        }
+        try {
+            // SPIKE 6 Option A: 按角色下自己的 share (receiver 下 z_i, sender 下 r_i)
+            const me = sessionStorage.getItem('username');
+            const isReceiver = currentGroupDetail.group && currentGroupDetail.group.creator === me;
+            const myShare = isReceiver
+                ? (currentGroupDetail.result.share_receiver || [])
+                : (currentGroupDetail.result.share_sender || []);
+            const roleLabel = isReceiver ? 'share_receiver_z' : 'share_sender_r';
+            const content = myShare.join('\n') + '\n';
+            const blob = new Blob([content], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `ss_psi_${roleLabel}_${currentGroupId}.txt`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (err) {
+            alert('下载失败: ' + err.message);
+        }
+    }
+
     function backToList() {
         currentGroupId = null;
         currentGroupDetail = null;
@@ -3404,193 +3515,18 @@ window.SS_PSI = (function() {
         loadMyGroups();
     }
 
-    // 2026-07-07: 解散小组 (SS-PSI 是 mock, 后端无 DELETE API, 只能提示用户)
+    // 2026-07-30 Friday fix: 后端实际有 DELETE /api/ss-psi-groups/<id>(看 protocols/routes.py _make_delete_group_handler)
     async function deleteGroup() {
         if (!currentGroupId) return;
         if (!confirm('确认解散该 SS-PSI 小组吗?')) return;
-        // SS-PSI mock 后端没有 DELETE API, 调用会 404, 这里给明确提示
-        alert('⚠ SS-PSI 当前是 mock 状态, 后端暂未实现解散 API。\n\n该 UI 按钮为占位, 待 SS-PSI 真实后端接入后可用。');
+        try {
+            await api(`/api/ss-psi-groups/${currentGroupId}`, { method: 'DELETE' });
+            alert('✓ 小组已解散');
+            backToList();
+        } catch (err) {
+            alert('解散失败: ' + err.message);
+        }
     }
 
-    return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, _loadMyGroups: loadMyGroups, stop: stopPolling };
-})();
-// ============================================================
-// 子页面 JS: PSI_SUM (IIFE 隔离，SPIKE 5 新增)
-// ============================================================
-window.PSI_SUM = (function() {
-let currentGroupId = null;
-let currentGroupName = '';
-let isCreator = false;
-
-async function checkLogin() {
-    const token = sessionStorage.getItem("token");
-    if (!token) { window.location.href = "login_register.html"; return false; }
-    const result = await apiGetCurrentUser();
-    if (!result.success) { logout(); return false; }
-    return true;
-}
-
-async function initPage() {
-    const isLoggedIn = await checkLogin();
-    if (!isLoggedIn) return;
-    loadMyGroups();
-}
-
-async function loadMyGroups() {
-    const list = document.getElementById('psiSumMyGroupList');
-    if (!list) return;
-    list.innerHTML = '<li class="empty-state">加载中...</li>';
-    const result = await apiGetMyPSISumGroups();
-    if (!result.success) { list.innerHTML = '<li class="empty-state">加载失败</li>'; return; }
-    const groups = result.groups || [];
-    if (groups.length === 0) { list.innerHTML = '<li class="empty-state">暂无小组</li>'; return; }
-    list.innerHTML = groups.map(g => `
-        <li class="psi-group-item" onclick="PSI_SUM.selectGroup('${g.id}')">
-            <div class="psi-group-name">${g.name}</div>
-            <div class="psi-group-code">${g.id}</div>
-            <div class="hint-text">成员：${g.members?.length || 0} | 创建：${g.created_at || ''}</div>
-        </li>
-    `).join('');
-}
-
-function selectGroup(gid) {
-    currentGroupId = gid;
-    document.getElementById('psiSumView1').style.display = 'none';
-    document.getElementById('psiSumBackBtn').style.display = 'block';
-    document.getElementById('psiSumView2').style.display = 'block';
-    loadGroupDetail(gid);
-}
-
-function backToList() {
-    currentGroupId = null;
-    document.getElementById('psiSumView1').style.display = 'block';
-    document.getElementById('psiSumBackBtn').style.display = 'none';
-    document.getElementById('psiSumView2').style.display = 'none';
-    loadMyGroups();
-}
-
-async function loadGroupDetail(gid) {
-    document.getElementById('psiSumCurrentGroupId').textContent = gid;
-    document.getElementById('psiSumCurrentGroupName').textContent = '加载中...';
-}
-
-async function createGroup() {
-    const name = document.getElementById('psiSumGroupNameInput').value.trim();
-    const mode = document.getElementById('psiSumStandardizeMode').value;
-    if (!name) { alert('请输入小组名称'); return; }
-    const result = await apiCreatePSISumGroup(name, mode);
-    if (result.success) { alert('小组创建成功！ID: ' + result.group.id); loadMyGroups(); }
-    else { alert('创建失败：' + (result.error || '未知错误')); }
-}
-
-async function joinGroup() {
-    const gid = document.getElementById('psiSumGroupIdInput').value.trim().toUpperCase();
-    if (gid.length !== 4) { alert('请输入 4 位小组 ID'); return; }
-    const result = await apiJoinPSISumGroup(gid);
-    alert(result.message || (result.error || '加入失败'));
-    if (result.message || result.success) loadMyGroups();
-}
-
-function handleSetFileSelected(input) {
-    document.getElementById('psiSumUploadBtn').disabled = !input.files[0];
-}
-
-function handleValueFileSelected(input) {}
-
-async function uploadFile() { alert('上传功能待对接完整 API'); }
-async function start() { alert('开始运算功能待对接完整 API'); }
-function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('psiSumTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-    document.getElementById('psiSumCurrentTab').style.display = tab === 'current' ? 'block' : 'none';
-    document.getElementById('psiSumHistoryTab').style.display = tab === 'history' ? 'block' : 'none';
-}
-function saveAndStartNewRound() { alert('保存并新一轮功能待对接'); }
-function deleteUpload() { alert('撤回上传功能待对接'); }
-function deleteGroup() { alert('解散小组功能待对接'); }
-
-return { init: initPage, selectGroup, backToList, createGroup, joinGroup, handleSetFileSelected, handleValueFileSelected, uploadFile, start, switchTab, saveAndStartNewRound, deleteUpload, deleteGroup };
-})();
-
-// ============================================================
-// 子页面 JS: SS_PSI (IIFE 隔离，SPIKE 5 新增)
-// ============================================================
-window.SS_PSI = (function() {
-let currentGroupId = null;
-let currentGroupName = '';
-let isCreator = false;
-
-async function checkLogin() {
-    const token = sessionStorage.getItem("token");
-    if (!token) { window.location.href = "login_register.html"; return false; }
-    const result = await apiGetCurrentUser();
-    if (!result.success) { logout(); return false; }
-    return true;
-}
-
-async function initPage() {
-    const isLoggedIn = await checkLogin();
-    if (!isLoggedIn) return;
-    loadMyGroups();
-}
-
-async function loadMyGroups() {
-    const list = document.getElementById('ssPsiMyGroupList');
-    if (!list) return;
-    list.innerHTML = '<li class="empty-state">加载中...</li>';
-    const result = await apiGetMySSPSIGroups();
-    if (!result.success) { list.innerHTML = '<li class="empty-state">加载失败</li>'; return; }
-    const groups = result.groups || [];
-    if (groups.length === 0) { list.innerHTML = '<li class="empty-state">暂无小组</li>'; return; }
-    list.innerHTML = groups.map(g => `
-        <li class="psi-group-item" onclick="SS_PSI.selectGroup('${g.id}')">
-            <div class="psi-group-name">${g.name}</div>
-            <div class="psi-group-code">${g.id}</div>
-            <div class="hint-text">成员：${g.members?.length || 0} | 创建：${g.created_at || ''}</div>
-        </li>
-    `).join('');
-}
-
-function selectGroup(gid) {
-    currentGroupId = gid;
-    document.getElementById('ssPsiView1').style.display = 'none';
-    document.getElementById('ssPsiBackBtn').style.display = 'block';
-    document.getElementById('ssPsiView2').style.display = 'block';
-    loadGroupDetail(gid);
-}
-
-function backToList() {
-    currentGroupId = null;
-    document.getElementById('ssPsiView1').style.display = 'block';
-    document.getElementById('ssPsiBackBtn').style.display = 'none';
-    document.getElementById('ssPsiView2').style.display = 'none';
-    loadMyGroups();
-}
-
-async function loadGroupDetail(gid) {
-    document.getElementById('ssPsiCurrentGroupId').textContent = gid;
-    document.getElementById('ssPsiCurrentGroupName').textContent = '加载中...';
-}
-
-async function createGroup() {
-    const name = document.getElementById('ssPsiGroupNameInput').value.trim();
-    if (!name) { alert('请输入小组名称'); return; }
-    const result = await apiCreateSSPSIGroup(name);
-    if (result.success) { alert('小组创建成功！ID: ' + result.group.id); loadMyGroups(); }
-    else { alert('创建失败：' + (result.error || '未知错误')); }
-}
-
-async function joinGroup() {
-    const gid = document.getElementById('ssPsiGroupIdInput').value.trim().toUpperCase();
-    if (gid.length !== 4) { alert('请输入 4 位小组 ID'); return; }
-    const result = await apiJoinSSPSIGroup(gid);
-    alert(result.message || (result.error || '加入失败'));
-    if (result.message || result.success) loadMyGroups();
-}
-
-async function uploadFile() { alert('上传功能待对接完整 API'); }
-async function start() { alert('开始运算功能待对接完整 API'); }
-function deleteGroup() { alert('解散小组功能待对接'); }
-
-return { init: initPage, selectGroup, backToList, createGroup, joinGroup, uploadFile, start, deleteGroup, stop: stopPolling };
+    return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, downloadResult, handleFileSelected, _loadMyGroups: loadMyGroups, stop: stopPolling };
 })();

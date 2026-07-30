@@ -618,12 +618,24 @@ def _generic_upload_handler(spec: ProtocolSpec):
         # PSI-Sum: 读 values 字段
         values = None
         if spec.protocol_id == 'psi_sum':
-            values_raw = request.form.get('values', '').strip()
-            if values_raw:
-                try:
-                    values = [int(v.strip()) for v in values_raw.split(',') if v.strip()]
-                except ValueError as e:
-                    return jsonify({'error': f'values 字段解析失败(需逗号分隔整数):{str(e)}'}), 400
+            # 2026-07-30 Friday fix: 前端用 formData.append('valueFile', file) 传文件
+            # 后端必须从文件读,不能只读 form 'values' 字段（逗号分隔）
+            if 'valueFile' in request.files:
+                vf = request.files['valueFile']
+                if vf.filename != '':
+                    vf_content = vf.read().decode('utf-8')
+                    values = [v.strip() for v in vf_content.replace(',', '\n').split('\n') if v.strip()]
+                    try:
+                        values = [int(v) for v in values]
+                    except ValueError:
+                        return jsonify({'error': 'value 文件必须全是整数(逗号/换行分隔)'}), 400
+            else:
+                values_raw = request.form.get('values', '').strip()
+                if values_raw:
+                    try:
+                        values = [int(v.strip()) for v in values_raw.split(',') if v.strip()]
+                    except ValueError as e:
+                        return jsonify({'error': f'values 字段解析失败(需逗号分隔整数):{str(e)}'}), 400
 
         content = file.read().decode('utf-8')
         mode = group.get('standardize_mode', 'auto')
@@ -844,6 +856,22 @@ def _make_start_computation_handler(spec: ProtocolSpec):
                 response['sum'] = result.get('sum', 0)
                 response['sum_str'] = result.get('sum_str', '0')
             elif spec.protocol_id == 'ss_psi':
+                # SPIKE 6 Option A: SS-PSI 存 share_sender/share_receiver 到 group['result']
+                # 之前只 update response 不存 group,导致 GET group 后前端 downloadResult 拿不到
+                # share 文件。注意:share 是双方各持一份,XOR 才是交集(隐私设计,无明文交集暴露)
+                data_for_save = spec.manager_cls.load_groups()
+                for _g in data_for_save['groups']:
+                    if _g['id'] == group_id:
+                        _g['result'] = {
+                            'share_sender': result.get('share_sender', []),
+                            'share_receiver': result.get('share_receiver', []),
+                            'cardinality_hint': result.get('cardinality_hint', 0),
+                            'cuckoo_size': result.get('cuckoo_size', 0),
+                            'computed_at': result.get('computed_at'),
+                            'computed_by': result.get('computed_by'),
+                        }
+                        break
+                spec.manager_cls.save_groups(data_for_save)
                 response.update(result)
             return jsonify(response), 200
         except Exception as e:

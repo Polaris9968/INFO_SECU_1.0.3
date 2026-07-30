@@ -1160,7 +1160,12 @@ def privacy_union():
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    return send_from_directory(STATIC_FOLDER_ABS, filename)
+    # 2026-07-30 Friday fix: 开发模式禁止缓存静态文件(避免 Chrome 缓存旧 JS 导致修了不生效)
+    response = send_from_directory(STATIC_FOLDER_ABS, filename)
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 # ==================== API 路由 ====================

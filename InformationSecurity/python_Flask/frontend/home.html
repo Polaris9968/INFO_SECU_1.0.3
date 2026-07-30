@@ -4145,7 +4145,7 @@ body > .sidebar {
                     <div class="card">
                         <h2>📁 上传集合 + 关联数值</h2>
                         <p style="color: #666; margin-bottom: 10px;">集合文件每行一个元素（数字/文本均可），value 文件每行一个整数/小数（与集合行数一致）</p>
-                        <p style="color: #666; font-size: 13px; margin-top: -5px; margin-bottom: 10px;">💡 <strong>协议特性</strong>：PSI-Sum 计算 <strong>sender 关联数值之和</strong>，receiver 仅知晓交集大小</p>
+                        
                         <div class="form-group">
                             <label>① 集合文件 <span style="color:#999;">（必填）</span></label>
                             <div class="upload-area" onclick="document.getElementById('psiSumFile').click()">
@@ -4187,9 +4187,17 @@ body > .sidebar {
                         </div>
                     </div>
 
-                    <!-- 隐私求和结果卡(协议特性:sender 知晓 sum, receiver 仅 cardinality) -->
+                    <!-- 隐私求和结果卡 -->
                     <div class="card" id="psiSumResultCard" style="display:none;">
                         <div class="psi-stats">
+                            <div class="psi-stat-item">
+                                <div class="psi-stat-label">我的元素数</div>
+                                <div class="psi-stat-value" id="psiSumMyCount">—</div>
+                            </div>
+                            <div class="psi-stat-item">
+                                <div class="psi-stat-label">对方元素数</div>
+                                <div class="psi-stat-value" id="psiSumOtherCount">—</div>
+                            </div>
                             <div class="psi-stat-item">
                                 <div class="psi-stat-label">交集大小 (cardinality)</div>
                                 <div class="psi-stat-value" id="psiSumCardinality">—</div>
@@ -4204,8 +4212,7 @@ body > .sidebar {
                             </div>
                         </div>
                         <p style="color: #666; font-size: 13px; margin-top: 10px;">
-                            💡 <strong>协议特性</strong>：sum 仅 sender 可见（本视图为 sender 视角），receiver 视角下显示 <em>"协议不公开"</em>。
-                        </p>
+                            
                     </div>
 
                     <!-- 操作按钮卡(集中所有按钮) -->
@@ -4232,7 +4239,7 @@ body > .sidebar {
     </div>
 </div>
 
-<!-- ==================== 秘密共享交集演示页面 (Mock, 2026-07-05, 仿 PSI_INT UX 多方版) ==================== -->
+<!-- ==================== 秘密共享交集页面 (SPIKE 5: 2-party sPSO, 仿 PSI_INT UX) ==================== -->
 <div id="ssPsiPage" class="ss-psi-page" style="display:none;">
     <div class="main-container">
         <div class="sidebar">
@@ -4245,14 +4252,7 @@ body > .sidebar {
                         <label>小组名称（创建新小组）</label>
                         <input type="text" id="ssPsiGroupNameInput" placeholder="输入小组名称" maxlength="50">
                     </div>
-                    <div class="form-group">
-                        <label>标准化方式（仅创建时可设，之后不可改）</label>
-                        <select id="ssPsiStandardizeMode" class="form-control">
-                            <option value="auto" selected>自动（数字直接用，文字 SHA-256 哈希）</option>
-                            <option value="number_only">只保留数字（文字丢弃）</option>
-                            <option value="text_all">全部当文字哈希</option>
-                        </select>
-                    </div>
+                    <!-- 2026-07-30 Friday fix: SS-PSI 不标准化(走原始 token)，删 select -->
                     <button class="btn btn-primary" onclick="SS_PSI.createGroup()">创建小组</button>
                     <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                         <div class="form-group">
@@ -4290,11 +4290,10 @@ body > .sidebar {
                         <span class="group-info-label">创建时间</span>
                         <span class="group-info-value" id="ssPsiCreatedAt"></span>
                     </div>
-                    <button class="btn btn-danger" style="margin-top:10px;" onclick="SS_PSI.deleteGroup()">🗑 解散小组</button>
                 </div>
 
                 <div class="card">
-                    <h2>👥 多方成员状态</h2>
+                    <h2>👥 成员状态</h2>
                     <div id="ssPsiMemberStatus"></div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="ssPsiProgressFill" style="width: 0%;"></div>
@@ -4304,43 +4303,65 @@ body > .sidebar {
 
                 <div class="card">
                     <h2>📁 上传文件</h2>
-                    <div class="form-group">
-                        <label>选择文件 (任意字符串集合, 换行/逗号分隔)</label>
-                        <input type="file" id="ssPsiFile" accept=".txt,.csv">
+                    <p style="color: #666; margin-bottom: 10px;">支持整数、小数、文本，以空格、换行或逗号分隔</p>
+                    <div class="upload-area" onclick="document.getElementById('ssPsiFile').click()">
+                        <input type="file" id="ssPsiFile" accept=".txt,.csv,.json" onchange="SS_PSI.handleFileSelected(this)">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">点击选择 .txt / .csv / .json 文件或拖拽文件到此处</div>
                     </div>
-                    <button class="btn btn-primary" id="ssPsiUploadBtn" onclick="SS_PSI.uploadFile()" disabled>📤 上传</button>
+                    <button class="btn btn-primary" id="ssPsiUploadBtn" onclick="SS_PSI.uploadFile()" style="margin-top: 15px;" disabled>📤 上传</button>
                     <span id="ssPsiUploadStatus" style="margin-left: 15px; color: #5a8a3a;"></span>
                 </div>
 
                 <div class="card" id="ssPsiStartCard" style="display:none;">
-                    <h2>🚀 开始秘密共享交集</h2>
-                    <p style="color: #666; margin-bottom: 10px;">所有参与方已上传, 点击下方按钮触发秘密共享交集 (Mock 演示模式)。</p>
-                    <button class="btn btn-success" id="ssPsiStartBtn" onclick="SS_PSI.start()">▶ 开始秘密共享交集</button>
+                    <h2>▶ 触发运算</h2>
+                    <p style="color: #666; margin-bottom: 10px;">双方均已上传后，组长可手动触发秘密共享交集（receiver 身份才能看到按钮）</p>
+                    <button class="btn btn-success hidden" id="ssPsiStartBtn" onclick="SS_PSI.start()" style="margin-top: 10px;">▶ 开始秘密共享交集</button>
                 </div>
 
-                <div class="card" id="ssPsiResultCard" style="display:none;">
-                    <h2>🎯 秘密共享交集结果</h2>
-                    <div style="background: #e8f4e8; padding: 20px; border-radius: 6px; margin-top: 10px;">
-                        <p style="margin-bottom: 10px;">共同交集大小 (cardinality): <strong id="ssPsiCardinality" style="font-size: 20px; color: #5a8a3a;"></strong></p>
-                        <p style="margin-bottom: 10px;">共同交集元素:</p>
-                        <pre id="ssPsiIntersection" style="background: #ffffff; padding: 12px; border-radius: 4px; border: 1px solid #d4e4d4; max-height: 200px; overflow-y: auto; margin: 0; font-family: monospace; color: #2d5a2d;"></pre>
+                <div class="card" id="ssPsiResultCard">
+                    <div class="psi-stats">
+                        <div class="psi-stat-item">
+                            <div class="psi-stat-label">我的元素数</div>
+                            <div class="psi-stat-value" id="ssPsiMyCount">0</div>
+                        </div>
+                        <div class="psi-stat-item">
+                            <div class="psi-stat-label">对方元素数</div>
+                            <div class="psi-stat-value" id="ssPsiOtherCount">0</div>
+                        </div>
+                        <div class="psi-stat-item">
+                            <div class="psi-stat-label">共同元素数</div>
+                            <div class="psi-stat-value" id="ssPsiCommonCount">0</div>
+                        </div>
+                        <div class="psi-stat-item" id="ssPsiDurationStatItem" style="display:none;">
+                            <div class="psi-stat-label">⏱ 耗时</div>
+                            <div class="psi-stat-value" id="ssPsiDurationStat">—</div>
+                        </div>
+                    </div>
+
+                    <div class="result-container" id="ssPsiPlaintextPreviewContainer" style="display:none;">
+                        <h3>📄 己方明文前 20 个</h3>
+                        <pre id="ssPsiPlaintextPreview">等待上传后显示...</pre>
+                    </div>
+
+                    <div class="result-container" id="ssPsiResultPreviewContainer" style="display:none;">
+                        <h3>🎯 交集前 20 个</h3>
+                        <pre id="ssPsiResultPreview"></pre>
+                    </div>
+
+                    <button class="btn btn-primary" id="ssPsiDownloadBtn" style="display:none; margin-top: 15px;" onclick="SS_PSI.downloadResult()">📥 下载完整结果</button>
+                    <h2 style="margin-top: 20px;">🎯 秘密共享交集结果</h2>
+                </div>
+
+                <!-- 操作按钮卡(集中所有按钮) -->
+                <div class="card">
+                    <h2>⚙️ 操作</h2>
+                    <div class="action-buttons">
+                        <button class="btn btn-danger hidden" id="ssPsiDeleteGroupBtn" onclick="SS_PSI.deleteGroup()">🗑 解散小组</button>
                     </div>
                 </div>
 
-                <div class="card" id="ssPsiParticipantsCard" style="display:none;">
-                    <h2>👥 参与方详情</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                        <thead>
-                            <tr style="background: #f0f0f0;">
-                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">参与方</th>
-                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">集合大小</th>
-                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">角色</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ssPsiParticipants"></tbody>
-                    </table>
-                </div>
-</div>
+            </div>
 <script src="./api.js"></script>
 <script src="./home.js"></script>
 <script src="./home-psi-pages.js"></script>

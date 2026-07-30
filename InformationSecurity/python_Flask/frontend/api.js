@@ -700,6 +700,30 @@ async function apiGetPSISumGroupHistory(groupId) {
     });
 }
 
+// 2026-07-30 Friday: 补 SS-PSI API 函数(之前 mock IIFE 调用了不存在的函数)
+// SS-PSI 后端接口前缀: /api/ss-psi-groups (复数,与其他协议不一致)
+async function apiCreateSSPSIGroup(name) {
+    return await request("/ss-psi-groups/create", {
+        method: "POST",
+        body: JSON.stringify({ name }),
+    });
+}
+
+async function apiJoinSSPSIGroup(groupId) {
+    return await request("/ss-psi-groups/join", {
+        method: "POST",
+        body: JSON.stringify({ groupId }),
+    });
+}
+
+async function apiGetSSPSIGroup(groupId) {
+    return await request(`/ss-psi-groups/${groupId}`, { method: "GET" });
+}
+
+async function apiGetMySSPSIGroups() {
+    return await request("/my-ss-psi-groups", { method: "GET" });
+}
+
 // 下载某 round 的归档文件
 // type: my_plaintext | my_value | result_cardinality | result_sum
 function apiDownloadPSISumRoundFile(groupId, roundNum, type) {
