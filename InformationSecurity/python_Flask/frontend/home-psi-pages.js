@@ -3480,7 +3480,10 @@ window.SS_PSI = (function() {
         // 论文 §5.2: 双方各持一份 share, XOR 才是交集 (任一方单独拿不到明文)
         // - creator (party1) = receiver -> 持有 share_receiver (z_i)
         // - joiner  (party2) = sender   -> 持有 share_sender   (r_i)
-        const me = sessionStorage.getItem('username');
+        // 2026-07-31 Friday fix: 必须用 getUsername() (JWT 解码), 不要用 sessionStorage.getItem('username')
+        // 老用户 sessionStorage 残留 stale 'undefined' 字串 (login bug 修前写入),
+        // 会让 isReceiver 永远 false, 两方都显示 sender
+        const me = getUsername();
         const isReceiver = currentGroupDetail && currentGroupDetail.group && currentGroupDetail.group.creator === me;
         const myShare = isReceiver ? (result.share_receiver || []) : (result.share_sender || []);
         const myRoleLabel = isReceiver ? 'receiver (z_i)' : 'sender (r_i)';
@@ -3584,7 +3587,8 @@ window.SS_PSI = (function() {
         }
         try {
             // SPIKE 6 Option A: 按角色下自己的 share (receiver 下 z_i, sender 下 r_i)
-            const me = sessionStorage.getItem('username');
+            // 2026-07-31 Friday fix: 用 getUsername() (JWT 解码), 跟 renderResult / renderFromDetail 一致
+            const me = getUsername();
             const isReceiver = currentGroupDetail.group && currentGroupDetail.group.creator === me;
             const myShare = isReceiver
                 ? (currentGroupDetail.result.share_receiver || [])
