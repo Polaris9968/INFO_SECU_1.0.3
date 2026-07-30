@@ -82,6 +82,14 @@ function startPSIAutoRefresh() {
     }, 3000);
 }
 
+// 2026-07-30 Friday fix: tab 切换时停掉 timer,避免多个 tab 同时轮询
+function stopPSIAutoRefresh() {
+    if (psiRefreshInterval) {
+        clearInterval(psiRefreshInterval);
+        psiRefreshInterval = null;
+    }
+}
+
 // ==================== 求交小组管理功能 ====================
 
 async function createPSIGroup() {
@@ -311,7 +319,9 @@ async function saveAndStartNewRound() {
     try {
         const result = await apiFinalizePSIRound(currentPSIGroupId);
         if (result.success) {
-            alert(`✓ 第 ${result.data.round} 轮已保存到历史\n双方可重新上传文件开始第 ${result.data.round + 1} 轮`);
+            // 2026-07-30 修复: 后端返回 round_record 对象,前端之前误读 data.round (undefined)
+            const round = result.data.round_record.round;
+            alert(`✓ 第 ${round} 轮已保存到历史\n双方可重新上传文件开始第 ${round + 1} 轮`);
             // 立即清空当前结果显示(避免旧数据残留)
             document.getElementById("psiResultCard").style.display = 'none';
             document.getElementById("psiResultPreviewContainer").style.display = 'none';
@@ -809,17 +819,16 @@ async function uploadPSIFile() {
     }
 }
 
-// ==================== 密文预览 / 下载 ====================
+// ==================== 密文预览 / 下载 =====================
+// 2026-07-30 Friday fix: 后端返 {preview, count},前端原来读 ciphertext/role/total_count 是 undefined
 async function loadPSICiphertextPreview() {
     if (!currentPSIGroupId) return;
     try {
         const result = await apiPSIPreviewCiphertext(currentPSIGroupId);
         if (result.success) {
-            const ct = result.data.ciphertext;
-            const role = result.data.role;
-            const total = result.data.total_count;
+            const ct = result.data.preview || [];
+            const total = result.data.count || 0;
             document.getElementById("psiCiphertextPreview").innerText =
-                `[身份: ${role === 'receiver' ? '接收方 (组长)' : '发送方 (成员)'}]\n` +
                 ct.map((line, i) => `${i + 1}. ${line}`).join('\n') +
                 (total > 20 ? `\n... 合计 ${total} 个密文` : '');
             document.getElementById("psiCiphertextPreviewContainer").style.display = 'block';
@@ -922,7 +931,7 @@ window.addEventListener("beforeunload", () => {
     window.handlePSIFileUpload = handlePSIFileUpload;
     window.startPSIComputation = startPSIComputation;
 
-    return { init: initPage, backToList: backToPsiIntList, switchTab, loadPsiIntHistory, saveAndStartNewRound, downloadRoundFile };
+    return { init: initPage, backToList: backToPsiIntList, switchTab, loadPsiIntHistory, saveAndStartNewRound, downloadRoundFile, stop: stopPSIAutoRefresh };
 })();
 
 // ============================================================
@@ -979,6 +988,14 @@ function startPSIMatchAutoRefresh() {
             await refreshCurrentPSIMatchGroup();
         }
     }, 3000);
+}
+
+// 2026-07-30 Friday fix: tab 切换时停掉 timer
+function stopPSIMatchAutoRefresh() {
+    if (psiMatchRefreshInterval) {
+        clearInterval(psiMatchRefreshInterval);
+        psiMatchRefreshInterval = null;
+    }
 }
 
 // ==================== 匹配小组管理功能 ====================
@@ -1544,16 +1561,15 @@ async function deleteMyMatchUpload() {
 }
 
 // ==================== 密文预览（PSI-Card OPRF）====================
+// 2026-07-30 Friday fix: 后端返 {preview, count}
 async function loadPSIMatchCiphertextPreview() {
     if (!currentPSIMatchGroupId) return;
     try {
         const result = await apiPSIMatchPreviewCiphertext(currentPSIMatchGroupId);
         if (result.success) {
-            const ct = result.data.ciphertext;
-            const role = result.data.role;
-            const total = result.data.total_count;
+            const ct = result.data.preview || [];
+            const total = result.data.count || 0;
             document.getElementById("matchCiphertext").innerText =
-                `[身份: ${role === 'receiver' ? '接收方 (组长)' : '发送方 (成员)'}]\n` +
                 ct.map((line, i) => `${i + 1}. ${line}`).join('\n') +
                 (total > 20 ? `\n... 合计 ${total} 个` : '');
             document.getElementById("matchCiphertextContainer").style.display = 'block';
@@ -1680,7 +1696,9 @@ window.addEventListener("beforeunload", () => {
         try {
             const result = await apiFinalizePSIMatchRound(currentPSIMatchGroupId);
             if (result.success) {
-                alert(`✓ 第 ${result.data.round} 轮已保存到历史\n双方可重新上传文件开始第 ${result.data.round + 1} 轮`);
+                // 2026-07-30 修复: 后端返回 round_record 对象,前端之前误读 data.round (undefined)
+                const round = result.data.round_record.round;
+                alert(`✓ 第 ${round} 轮已保存到历史\n双方可重新上传文件开始第 ${round + 1} 轮`);
                 document.getElementById("psiMatchResultCard").style.display = 'none';
                 document.getElementById("matchResultContainer").style.display = 'none';
                 document.getElementById("matchCiphertextContainer").style.display = 'none';
@@ -1705,7 +1723,7 @@ window.addEventListener("beforeunload", () => {
         apiDownloadPSIMatchRoundFile(currentPSIMatchGroupId, roundNum, type);
     }
 
-    return { init: initPage, backToList: backToPsiMatchList, switchTab, loadPsiMatchHistory, saveAndStartNewRound, downloadRoundFile };
+    return { init: initPage, backToList: backToPsiMatchList, switchTab, loadPsiMatchHistory, saveAndStartNewRound, downloadRoundFile, stop: stopPSIMatchAutoRefresh };
 })();
 
 // ============================================================
@@ -1774,6 +1792,14 @@ function startPSIUnionAutoRefresh() {
             await refreshCurrentPSIUnionGroup();
         }
     }, 3000);
+}
+
+// 2026-07-30 Friday fix: tab 切换时停掉 timer
+function stopPSIUnionAutoRefresh() {
+    if (psiUnionRefreshInterval) {
+        clearInterval(psiUnionRefreshInterval);
+        psiUnionRefreshInterval = null;
+    }
 }
 
 // ==================== 求并小组管理功能 ====================
@@ -2371,17 +2397,16 @@ async function uploadPSIUnionFile() {
     }
 }
 
-// ==================== 密文预览 / 下载 ====================
+// ==================== 密文预览 / 下载 =====================
+// 2026-07-30 Friday fix: 后端返 {preview, count}
 async function loadPSUCiphertextPreview() {
     if (!currentPSIUnionGroupId) return;
     try {
         const result = await apiPSUPreviewCiphertext(currentPSIUnionGroupId);
         if (result.success) {
-            const ct = result.data.ciphertext;
-            const role = result.data.role;
-            const total = result.data.total_count;
+            const ct = result.data.preview || [];
+            const total = result.data.count || 0;
             document.getElementById("psuCiphertextPreview").innerText =
-                `[身份: ${role === 'receiver' ? '接收方 (组长)' : '发送方 (成员)'}]\n` +
                 ct.map((line, i) => `${i + 1}. ${line}`).join('\n') +
                 (total > 20 ? `\n... 合计 ${total} 个` : '');
             document.getElementById("psuCiphertextPreviewContainer").style.display = 'block';
@@ -2535,7 +2560,9 @@ window.addEventListener("beforeunload", () => {
         try {
             const result = await apiFinalizePSUUnionRound(currentPSIUnionGroupId);
             if (result.success) {
-                alert(`✓ 第 ${result.data.round} 轮已保存到历史\n双方可重新上传文件开始第 ${result.data.round + 1} 轮`);
+                // 2026-07-30 修复: 后端返回 round_record 对象,前端之前误读 data.round (undefined)
+                const round = result.data.round_record.round;
+                alert(`✓ 第 ${round} 轮已保存到历史\n双方可重新上传文件开始第 ${round + 1} 轮`);
                 document.getElementById("psiUnionResultCard").style.display = 'none';
                 document.getElementById("psuUnionPreviewContainer").style.display = 'none';
                 document.getElementById("psuCiphertextPreviewContainer").style.display = 'none';
@@ -2571,7 +2598,7 @@ window.addEventListener("beforeunload", () => {
         apiDownloadPSUUnionRoundFile(currentPSIUnionGroupId, roundNum, type);
     }
 
-    return { init: initPage, backToList: backToPsiUnionList, switchTab, loadPsiUnionHistory, saveAndStartNewRound, downloadRoundFile };
+    return { init: initPage, backToList: backToPsiUnionList, switchTab, loadPsiUnionHistory, saveAndStartNewRound, downloadRoundFile, stop: stopPSIUnionAutoRefresh };
 })();
 
 
@@ -3102,7 +3129,9 @@ window.PSI_SUM = (function() {
         try {
             const result = await apiFinalizePSISumRound(currentGroupId);
             if (result.success) {
-                alert(`✓ 第 ${result.data.round} 轮已保存到历史\n双方可重新上传文件开始第 ${result.data.round + 1} 轮`);
+                // 2026-07-30 修复: 后端返回 round_record 对象,前端之前误读 data.round (undefined)
+                const round = result.data.round_record.round;
+                alert(`✓ 第 ${round} 轮已保存到历史\n双方可重新上传文件开始第 ${round + 1} 轮`);
                 resetMainArea();
                 const detail = await loadGroupDetail(currentGroupId);
                 if (detail) {
@@ -3383,7 +3412,7 @@ window.SS_PSI = (function() {
         alert('⚠ SS-PSI 当前是 mock 状态, 后端暂未实现解散 API。\n\n该 UI 按钮为占位, 待 SS-PSI 真实后端接入后可用。');
     }
 
-    return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, _loadMyGroups: loadMyGroups };
+    return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, _loadMyGroups: loadMyGroups, stop: stopPolling };
 })();
 // ============================================================
 // 子页面 JS: PSI_SUM (IIFE 隔离，SPIKE 5 新增)
@@ -3563,5 +3592,5 @@ async function uploadFile() { alert('上传功能待对接完整 API'); }
 async function start() { alert('开始运算功能待对接完整 API'); }
 function deleteGroup() { alert('解散小组功能待对接'); }
 
-return { init: initPage, selectGroup, backToList, createGroup, joinGroup, uploadFile, start, deleteGroup };
+return { init: initPage, selectGroup, backToList, createGroup, joinGroup, uploadFile, start, deleteGroup, stop: stopPolling };
 })();

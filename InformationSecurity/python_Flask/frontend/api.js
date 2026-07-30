@@ -9,6 +9,8 @@ async function request(endpoint, options = {}) {
         headers: {
             "Content-Type": "application/json",
         },
+        // 2026-07-30 Friday fix: 加 8 秒超时避免 Chrome 同源 6 连接排队超过 30 秒后报 ERR_CONNECTION_TIMED_OUT
+        signal: AbortSignal.timeout(8000),
     };
 
     // 如果有 token，添加到请求头

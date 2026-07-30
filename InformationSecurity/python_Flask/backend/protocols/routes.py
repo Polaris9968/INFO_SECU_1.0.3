@@ -55,7 +55,7 @@ _PROTOCOL_EXTRAS_CONFIG = {
         'reader': 'read_union_from_file',
         'completed_field': 'union_completed',
         'count_field': 'union_count',
-        'preview_field': 'union_preview',
+        'preview_field': 'result_preview',  # 2026-07-30 fix: 前端读 result_preview, 后端之前用 union_preview
         'full_count_field': 'union_full_count',
         'count_returns_list': True,
     },
@@ -115,8 +115,13 @@ def _make_protocol_extras(group, username, spec):
         rev_map = dict(zip(rev_nums, rev_origs))
         preview_data = []
         for x in result[:20]:
-            x_int = int(x)
-            x_str = str(x_int)
+            try:
+                x_int = int(x)
+                x_str = str(x_int)
+            except (ValueError, TypeError):
+                # 2026-07-30 防御: result 里可能有非数字行 (eg. padding sentinel 遗漏)
+                # 跳过,不解码
+                continue
             preview_data.append({
                 'value': x_str,
                 'original': rev_map.get(x_str, x_str),  # 本侧映射不到就显示数字本身
@@ -355,6 +360,10 @@ def _make_get_group_handler(spec: ProtocolSpec):
 
             return jsonify(response_data)
         except Exception as e:
+            import traceback
+            with open('/tmp/flask_get_err.log', 'a') as _f:
+                _f.write(f"\n=== {spec.protocol_id} GET {group_id} ===\n")
+                _f.write(traceback.format_exc())
             return jsonify({'error': f'获取小组失败:{str(e)}'}), 500
     return _auth_required(spec, handler)
 
@@ -466,7 +475,7 @@ def _register_protocol(app, spec: ProtocolSpec):
     app.add_url_rule(f'{prefix}/upload', f'{spec.protocol_id}_upload',
                      _make_upload_handler(spec), methods=['POST'])
 
-    app.add_url_rule(f'/api/my-{spec.protocol_id.replace("_", "-")}-groups',
+    app.add_url_rule(f'/api/my-{spec.url_prefix.rsplit("/",1)[-1].replace("-groups","").replace("-group","")}-groups',
                      f'my_{spec.protocol_id}_groups',
                      _make_my_groups_handler(spec), methods=['GET'])
 
@@ -638,7 +647,11 @@ def _generic_upload_handler(spec: ProtocolSpec):
             else:
                 json_path = group.get('json_path')
                 if not json_path:
-                    return jsonify({'error': '请等组长(receiver)上传并选择 JSON path'}), 400
+                    # 2026-07-30 修复: 兼容 receiver 探测 0 paths 的场景
+                    # (eg. 纯 token 数组 ["a","b"],后端探测返回 paths=[] → 触发 alert "由后端默认提取"
+                    # → 实际上 _parse_json_items 走"档 1a" 自动模式能成功,但 group.json_path 未被写入)
+                    # sender 不再 400,改为走自动模式 (None → _parse_json_items 自动 fallback)
+                    json_path = None
         else:
             json_path = None
 
@@ -872,7 +885,9 @@ def _make_history_handler(spec: ProtocolSpec):
             history = spec.manager_cls.get_history(group_id, username)
             if history is None:
                 return jsonify({'error': '该协议不支持多轮历史'}), 400
-            return jsonify({'success': True, 'history': history})
+            # 2026-07-30 fix: 前端 4 处 loadHistory 都读 result.data.rounds
+            # 之前返 'history' 字段,前端拿不到,一直显示"暂无历史记录"
+            return jsonify({'success': True, 'rounds': history, 'history': history})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return _auth_required(spec, handler)

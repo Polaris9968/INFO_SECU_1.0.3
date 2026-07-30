@@ -16,6 +16,7 @@ import hashlib
 from datetime import datetime, timedelta
 from functools import wraps
 
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -23,6 +24,10 @@ from flask_limiter.util import get_remote_address
 from werkzeug.utils import secure_filename
 import bcrypt
 import jwt
+
+# 加载 .env (dev 阶段用)。load_dotenv 默认 override=False,
+# 已 export 的环境变量优先于 .env,所以 systemd 注入的 env 仍生效。
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 
 
 # ==================== 配置 ====================
@@ -208,6 +213,7 @@ def _probe_json_paths(content):
     - path 是相对路径(去除 items / 顶层数组包裹),直接传给 _extract_by_path
     - 过滤掉元数据字段(description / meta / note / comment / _id / index)
     - 只支持 list-of-dict 结构;纯数组 / 嵌套 list 不展开
+    2026-07-30 放宽:不再只认 items/data/records,识别任意顶层 list 字段 (优先级 items>data>records>其他)
     """
     try:
         data = json.loads(content)
@@ -218,13 +224,22 @@ def _probe_json_paths(content):
         source = data
         wrapper = ''  # 顶层数组:不包裹层
     elif isinstance(data, dict):
-        for key in ('items', 'data', 'records'):
+        # 2026-07-30: 先试标准 wrapper,再 fallback 到任意顶层 list 字段
+        STANDARD_WRAPPERS = ('items', 'data', 'records')
+        wrapper = None
+        for key in STANDARD_WRAPPERS:
             if key in data and isinstance(data[key], list):
                 source = data[key]
-                wrapper = key  # 用作展示前缀
+                wrapper = key
                 break
-        else:
-            raise ValueError("JSON 需要是数组,或包含 items/data/records 数组的字段")
+        if wrapper is None:
+            list_keys = [k for k, v in data.items() if isinstance(v, list) and v]
+            if not list_keys:
+                raise ValueError("JSON 需要是数组,或包含数组字段的对象")
+            # 取第一个非空 list 字段 (避免 None/空 list 误中)
+            first_key = list_keys[0]
+            source = data[first_key]
+            wrapper = first_key
     else:
         raise ValueError("JSON 顶层必须是数组或对象")
 
@@ -341,17 +356,35 @@ def _extract_by_path(data_list, path):
     return result
 
 
+def _pick_top_list_field(data, prefer=('items', 'data', 'records')):
+    """2026-07-30: 从 dict 中挑选一个 list 字段。
+    优先顺序:items > data > records > 第一个非空 list 字段。
+    返回 (source, key) 或 (None, None)。
+    """
+    for k in prefer:
+        if k in data and isinstance(data[k], list):
+            return data[k], k
+    for k, v in data.items():
+        if isinstance(v, list) and v:
+            return v, k
+    return None, None
+
+
 def _parse_json_items(content, path=None):
     """解析 JSON 内容,返回原始 token 列表(不标准化,交给上层统一处理)。
     档 1:
         ["a", "b"]                     → ["a", "b"]
         {"items": ["a", "b"]}          → ["a", "b"]
+        {"users": ["a", "b"]}          → ["a", "b"]  (2026-07-30 放宽,识别任意顶层 list 字段)
     档 2:
         {"path": "user.email",
          "data": [{"user": {"email": "a"}}, ...]}  → 走 path 提取
         {"path": "user.email",
          "items": [{"user": {"email": "a"}}, ...]}  → items 优先于 data
+        {"path": "user.email",
+         "users": [{"user": {"email": "a"}}, ...]}  → 2026-07-30 也识别 users
     2026-07-02:path 参数(可选)由调用方传入 ① 优先于 ② JSON 顶层字段
+    2026-07-30:放宽 wrapper 识别 (items/data/records 或任意顶层 list 字段)
     失败:raise ValueError,给中文友好错误
     """
     try:
@@ -371,23 +404,19 @@ def _parse_json_items(content, path=None):
     if effective_path is not None:
         if not isinstance(effective_path, str) or not effective_path.strip():
             raise ValueError("path 字段必须是非空字符串")
-        source = data.get('items')
+        source, key = _pick_top_list_field(data)
         if source is None:
-            source = data.get('data')
-        if source is None:
-            raise ValueError("path 模式下需要 items 或 data 字段")
+            raise ValueError("path 模式下需要 items/data/records 或其他顶层 list 字段")
         if not isinstance(source, list):
-            raise ValueError("items/data 字段必须是数组")
+            raise ValueError(f"{key} 字段必须是数组")
         return _extract_by_path(source, effective_path)
 
-    # 档 1b: 对象有 items 字段
-    if 'items' in data:
-        items = data['items']
-        if not isinstance(items, list):
-            raise ValueError("items 字段必须是数组")
-        return [str(x) if x is not None else '' for x in items]
+    # 档 1b: 任意顶层 list 字段 (2026-07-30 放宽)
+    source, key = _pick_top_list_field(data)
+    if source is not None:
+        return [str(x) if x is not None else '' for x in source]
 
-    raise ValueError("对象需要 items 字段,或 path + items/data 字段")
+    raise ValueError("对象需要顶层数组字段 (items/data/records 或其他任意 list 字段)")
 
 
 def extract_items_from_file(content, filename, mode='auto', path=None):
@@ -442,18 +471,22 @@ def read_intersection_from_file(group_id):
     intersection = []
     for line in content.split('\n'):
         line = line.strip()
-        if line:
-            try:
-                if '.' in line:
-                    num = float(line)
-                    if num.is_integer():
-                        intersection.append(int(num))
-                    else:
-                        intersection.append(num)
+        if not line:
+            continue
+        # 2026-07-30 防御:跳过 SPIKE 2 sPSO padding sentinel
+        if line.startswith('__spike2_pad_'):
+            continue
+        try:
+            if '.' in line:
+                num = float(line)
+                if num.is_integer():
+                    intersection.append(int(num))
                 else:
-                    intersection.append(int(line))
-            except ValueError:
-                intersection.append(line)
+                    intersection.append(num)
+            else:
+                intersection.append(int(line))
+        except ValueError:
+            intersection.append(line)
 
     return intersection
 
@@ -508,18 +541,24 @@ def read_union_from_file(group_id):
     union_result = []
     for line in content.split('\n'):
         line = line.strip()
-        if line:
-            try:
-                if '.' in line:
-                    num = float(line)
-                    if num.is_integer():
-                        union_result.append(int(num))
-                    else:
-                        union_result.append(num)
+        if not line:
+            continue
+        # 2026-07-30 防御:跳过 SPIKE 2 sPSO padding sentinel (eg. __spike2_pad_sender_24)
+        # Kunlun 不知道 padding 概念,会把 sentinel 当 token 写入 result 文件。
+        # 根治要等 sPSO padding 不污染 input。
+        if line.startswith('__spike2_pad_'):
+            continue
+        try:
+            if '.' in line:
+                num = float(line)
+                if num.is_integer():
+                    union_result.append(int(num))
                 else:
-                    union_result.append(int(line))
-            except ValueError:
-                union_result.append(line)
+                    union_result.append(num)
+            else:
+                union_result.append(int(line))
+        except ValueError:
+            union_result.append(line)
 
     return union_result
 
@@ -1138,8 +1177,9 @@ def _register_protocol_routes_lazy():
 @app.errorhandler(Exception)
 def _friday_error_log(e):
     import traceback
+    import sys as _sys  # 2026-07-30 Friday fix: 之前漏 import sys 导致 handler 自己 NameError
     traceback.print_exc()
-    sys.stdout.flush()
+    _sys.stdout.flush()
     return jsonify({'error': f'internal: {type(e).__name__}: {str(e)[:300]}'}), 500
 
 # ==================== 启动程序 ====================
