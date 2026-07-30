@@ -137,7 +137,7 @@ PROTOCOL_SS_PSI = ProtocolSpec(
     max_members=2,  # SPIKE 5: 2-party
     runner_cls=SpsoSSPSI,
     is_mock=False,
-    has_history=False,
+    has_history=True,                # 2026-07-30 SPIKE 6: 哥反馈缺下一轮按钮
     has_preview_ciphertext=False,
     has_download_result=False,
     has_download_result_with_original=False,
@@ -145,7 +145,7 @@ PROTOCOL_SS_PSI = ProtocolSpec(
     has_download_original_by_role=False,
     has_download_round=False,
     has_demo_endpoint=True,
-    finalize_round_endpoint=False,
+    finalize_round_endpoint=True,    # SPIKE 6: 启用了 finalize_round
     start_computation_endpoint=True,
     # SS-PSI 特殊
     supports_leave=False,

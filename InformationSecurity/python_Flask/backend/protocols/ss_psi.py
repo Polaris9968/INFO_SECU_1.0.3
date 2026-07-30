@@ -29,9 +29,32 @@ class SSPSIGroupManager(BaseGroupManager):
     id_length = 4
     max_members = 2   # ★ 2-party
 
-    supports_history = False
+    supports_history = True  # 2026-07-30 SPIKE 6: 启用多轮(哥反馈缺"下一轮"按钮)
     result_field = 'result'
     data_dir_attr = 'KUNLUN_SS_PSI_DATA_DIR'
+
+    @classmethod
+    def _post_finalize_cleanup(cls, group):
+        # 2026-07-30 SPIKE 6: 归档当前 share 到 round, 然后清掉 result 字段
+        # 否则前端 GET 还能读到旧的 share,新一轮 start 不会被强制清理
+        group['result'] = None
+        group['cardinality_hint'] = None
+
+    # SPIKE 6 多轮归档: 归档 share 文件 + 双方上传文件
+    # 下轮 start 会重新生成 share 文件(stale_filenames 包含 share_*, 保证归档后顶层不残留)
+    archive_filenames = (
+        'party1.txt', 'party2.txt',
+        'original_party1.txt', 'original_party2.txt',
+        'share_sender.txt', 'share_receiver.txt',
+        'intersection.txt',  # 旧 mock 时代残余,保险归档
+    )
+    stale_filenames = (
+        'party1.txt', 'party2.txt',
+        'original_party1.txt', 'original_party2.txt',
+        'share_sender.txt', 'share_receiver.txt',
+        'intersection.txt',
+    )
+    upload_filenames_to_clear = ('uploaded_party1', 'uploaded_party2')
 
     @classmethod
     def create_group(cls, group_name, creator, **kwargs):
