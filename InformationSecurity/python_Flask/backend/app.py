@@ -1137,7 +1137,12 @@ def index():
 
 @app.route('/home.html')
 def home():
-    return send_from_directory(STATIC_FOLDER_ABS, 'home.html')
+    # 2026-07-30 Friday fix: dev 模式禁缓存(Chrome 会缓存 home.html, 改完看不到新 UI)
+    response = send_from_directory(STATIC_FOLDER_ABS, 'home.html')
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route('/collaborate.html')

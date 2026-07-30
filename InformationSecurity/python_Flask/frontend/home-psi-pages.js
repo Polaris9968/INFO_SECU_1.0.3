@@ -3483,6 +3483,23 @@ window.SS_PSI = (function() {
         if (textEl) textEl.textContent = '✓ 已选择: ' + inputEl.files[0].name;
         document.getElementById('ssPsiUploadBtn').disabled = false;
     }
+    async function saveAndStartNewRound() {
+        if (!currentGroupId) { alert('小组未加载'); return; }
+        if (!confirm('确定要保存当前 share 结果到历史,双方需要重新上传文件,开始下一轮吗?')) return;
+        try {
+            const j = await api(`/api/ss-psi-groups/${currentGroupId}/finalize-round`, { method: 'POST' });
+            if (j.success) {
+                alert(`✓ 已保存到第 ${j.round_record?.round || '?'} 轮, 现在双方可以重新上传文件`);
+                const detail = await loadGroupDetail(currentGroupId);
+                if (detail) { currentGroupDetail = detail; renderFromDetail(); }
+            } else {
+                alert('归档失败: ' + (j.error || '未知错误'));
+            }
+        } catch (err) {
+            alert('归档失败: ' + err.message);
+        }
+    }
+
     async function downloadResult() {
         if (!currentGroupId || !currentGroupDetail || !currentGroupDetail.result) {
             alert('尚无结果可下载'); return;
@@ -3528,5 +3545,5 @@ window.SS_PSI = (function() {
         }
     }
 
-    return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, downloadResult, handleFileSelected, _loadMyGroups: loadMyGroups, stop: stopPolling };
+    return { init, createGroup, joinGroup, enterGroup, uploadFile, start, backToList, deleteGroup, downloadResult, saveAndStartNewRound, handleFileSelected, _loadMyGroups: loadMyGroups, stop: stopPolling };
 })();
