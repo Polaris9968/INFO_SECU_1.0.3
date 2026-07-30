@@ -3355,11 +3355,18 @@ window.SS_PSI = (function() {
         const myUploaded = !!meUpload;
         document.getElementById('ssPsiUploadBtn').disabled = g.members.length < totalParties || myUploaded;
         document.getElementById('ssPsiStartCard').style.display = allUploaded ? 'block' : 'none';
-        // 2026-07-30 Friday fix: HTML 里按钮带 'hidden' class,必须 classList.remove 才能看到
+        // 2026-07-30 SPIKE 6 fix: 只组长可以触发运算 (后端 routes.py:759 已有 403 守卫,前端先限制更友好)
+        // 同时已运算过且是组长时显示 [下一轮] 按钮
+        const isCreator = g.creator === me;
         const ssStartBtn = document.getElementById('ssPsiStartBtn');
         if (ssStartBtn) {
-            if (allUploaded) ssStartBtn.classList.remove('hidden');
+            if (allUploaded && isCreator) ssStartBtn.classList.remove('hidden');
             else ssStartBtn.classList.add('hidden');
+        }
+        const ssSaveRoundBtn = document.getElementById('ssPsiSaveRoundBtn');
+        if (ssSaveRoundBtn) {
+            if (g.result && isCreator) ssSaveRoundBtn.classList.remove('hidden');
+            else ssSaveRoundBtn.classList.add('hidden');
         }
         const remainText = g.members.length < totalParties
             ? `⏳ 等待其他参与方加入 (${g.members.length}/${totalParties})...`
@@ -3390,8 +3397,7 @@ window.SS_PSI = (function() {
             document.getElementById('ssPsiDownloadBtn').style.display = 'none';
         }
 
-        // 操作按钮: 组长显示解散
-        const isCreator = g.creator === me;
+        // 操作按钮: 组长显示解散 (isCreator 已在上方声明)
         const deleteBtn = document.getElementById('ssPsiDeleteGroupBtn');
         if (deleteBtn) {
             if (isCreator) deleteBtn.classList.remove('hidden');
