@@ -3345,9 +3345,11 @@ window.SS_PSI = (function() {
     async function loadSSPsiHistory() {
         if (!currentGroupId) return;
         try {
+            // 2026-07-31 Friday fix: apiGetSSPSIGroupHistory 用 request() 包装,返回 {success, data}
+            // 后端 rounds 在 data 里,所以 result.data.rounds (不是 result.rounds)
             const result = await apiGetSSPSIGroupHistory(currentGroupId);
-            if (result.success) {
-                const rounds = result.rounds || [];
+            if (result.success && result.data) {
+                const rounds = result.data.rounds || result.data.history || [];
                 const countEl = document.getElementById('ssPsiHistoryCount');
                 if (countEl) countEl.innerText = rounds.length;
                 const tabHistoryBtn = document.getElementById('ssPsiTabHistory');
@@ -3484,7 +3486,8 @@ window.SS_PSI = (function() {
         // 老用户 sessionStorage 残留 stale 'undefined' 字串 (login bug 修前写入),
         // 会让 isReceiver 永远 false, 两方都显示 sender
         const me = getUsername();
-        const isReceiver = currentGroupDetail && currentGroupDetail.group && currentGroupDetail.group.creator === me;
+        // 2026-07-31 Friday fix: loadGroupDetail 返回 j.group (group 对象本身),所以是 currentGroupDetail.creator,不是 currentGroupDetail.group.creator
+        const isReceiver = currentGroupDetail && currentGroupDetail.creator === me;
         const myShare = isReceiver ? (result.share_receiver || []) : (result.share_sender || []);
         const myRoleLabel = isReceiver ? 'receiver (z_i)' : 'sender (r_i)';
 
@@ -3589,7 +3592,8 @@ window.SS_PSI = (function() {
             // SPIKE 6 Option A: 按角色下自己的 share (receiver 下 z_i, sender 下 r_i)
             // 2026-07-31 Friday fix: 用 getUsername() (JWT 解码), 跟 renderResult / renderFromDetail 一致
             const me = getUsername();
-            const isReceiver = currentGroupDetail.group && currentGroupDetail.group.creator === me;
+            // 2026-07-31 Friday fix: loadGroupDetail 返回 j.group (group 对象本身),所以是 currentGroupDetail.creator,不是 currentGroupDetail.group.creator
+            const isReceiver = currentGroupDetail && currentGroupDetail.creator === me;
             const myShare = isReceiver
                 ? (currentGroupDetail.result.share_receiver || [])
                 : (currentGroupDetail.result.share_sender || []);
