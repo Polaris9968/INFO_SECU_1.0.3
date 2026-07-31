@@ -5,13 +5,13 @@ SpsoPSI / SpsoPSU / SpsoPSICard / SpsoPSIMatch — sPSO 4 协议 wrapper。
 SPIKE 2: PSI 切到 sPSO(已上线)
 SPIKE 3: PSU / PSI-Card / PSI-Match 切到 sPSO
 
-替代 KunlunRunner 的 PSI/PSU/Card/Match 调用,通过 subprocess 启动 spso_runner 二进制。
+替代 BaseRunner 的 PSI/PSU/Card/Match 调用,通过 subprocess 启动 spso_runner 二进制。
 数据契约保持兼容(读 receiver.txt / sender.txt,写 intersection.txt / union.txt /
 cardinality.txt),这样 routes.py 和 app.py 里所有用 read_*_from_file / 
 _generic_upload_handler 的逻辑都不需要改。
 
 设计选择(权衡):
-  - 继承 KunlunRunner 是最干净的方式:所有 spawn/parse 逻辑复用。
+  - 继承 BaseRunner 是最干净的方式:所有 spawn/parse 逻辑复用。
   - override `_run_kunlun` → `run` 直接调 sPSO 即可(避开 spawn 两个进程)。
   - spso_runner 是单进程(内部 in-process 跑 sender/receiver 两个线程),
     所以不需要 spawn_order,也不需要 kunlun_build_dir。
@@ -30,7 +30,7 @@ _SPSO_PYTHON_DIR = "/root/projects/INFO_SECU_1.0.3/spso_python"
 if _SPSO_PYTHON_DIR not in sys.path:
     sys.path.insert(0, _SPSO_PYTHON_DIR)
 
-from .base import KunlunRunner
+from .base import BaseRunner
 
 
 SPSO_RUNNER = os.path.join(_SPSO_PYTHON_DIR, "spso_runner")
@@ -118,10 +118,10 @@ def _run_spso_mode(group_id, data_dir_attr, spso_mode,
 # ============================================================
 # SpsoPSI  — SPIKE 2
 # ============================================================
-class SpsoPSI(KunlunRunner):
+class SpsoPSI(BaseRunner):
     """sPSO PSI runner. Replaces KunlunPSI for SPIKE 2 integration.
 
-    与 KunlunRunner 兼容的接口:
+    与 BaseRunner 兼容的接口:
       - run(group_id): 主入口
       - parse_result(text): 默认按行 split
 
@@ -130,9 +130,9 @@ class SpsoPSI(KunlunRunner):
       - 不需要 cwd=kunlun_build_dir
       - input_dir / output_file 用 group_id 下的子目录
     """
-    receiver_exec = 'spso_runner'   # 兼容 KunlunRunner 字段(实际不用)
-    sender_exec = 'spso_runner'     # 兼容 KunlunRunner 字段(实际不用)
-    data_dir_attr = 'SPSO_PSI_DATA_DIR'  # 复用 Kunlun 路径(SPEC 要求)
+    receiver_exec = 'spso_runner'   # 兼容 BaseRunner 字段(实际不用)
+    sender_exec = 'spso_runner'     # 兼容 BaseRunner 字段(实际不用)
+    data_dir_attr = 'SPSO_PSI_DATA_DIR'  # 复用 sPSO 路径(SPEC 要求)
     result_filenames = ('intersection.txt',)
     log_tag = 'sPSO-PSI'
 
@@ -153,7 +153,7 @@ class SpsoPSI(KunlunRunner):
 # ============================================================
 # SpsoPSU  — SPIKE 3 (Private Set Union)
 # ============================================================
-class SpsoPSU(KunlunRunner):
+class SpsoPSU(BaseRunner):
     """sPSO PSU runner. Replaces KunlunPSU for SPIKE 3.
 
     与 KunlunPSU 相同接口:
@@ -189,7 +189,7 @@ class SpsoPSU(KunlunRunner):
 # ============================================================
 # SpsoPSICard  — SPIKE 3 (Cardinality)
 # ============================================================
-class SpsoPSICard(KunlunRunner):
+class SpsoPSICard(BaseRunner):
     """sPSO PSI-Card runner. Replaces KunlunPSICard for SPIKE 3.
 
     与 KunlunPSICard 相同接口:
@@ -224,7 +224,7 @@ class SpsoPSICard(KunlunRunner):
 # ============================================================
 # SpsoPSIMatch  — SPIKE 3 (PSI-Match 用 PSI 模拟)
 # ============================================================
-class SpsoPSIMatch(KunlunRunner):
+class SpsoPSIMatch(BaseRunner):
     """sPSO PSI-Match runner. Replaces KunlunPSIMatch for SPIKE 3.
 
     SPIKE 3 决策(已和 Polaris 对齐):
@@ -264,7 +264,7 @@ class SpsoPSIMatch(KunlunRunner):
         except Exception as e:
             return {'success': False, 'error': f'读 Config 失败: {e}'}
 
-        # alice = group creator = receiver (KunlunRunner 历史约定)
+        # alice = group creator = receiver (BaseRunner 历史约定)
         # 暂不依赖 group(为了避免又走 BaseGroupManager load_groups),参数走 group.json
         try:
             group_json_path = os.path.join(data_dir, 'group.json')
@@ -336,7 +336,7 @@ class SpsoPSIMatch(KunlunRunner):
 # ============================================================
 # SpsoPSISum  — SPIKE 4 (PSI-Sum: Σ values[i] for i ∈ X∩Y, mod q)
 # ============================================================
-class SpsoPSISum(KunlunRunner):
+class SpsoPSISum(BaseRunner):
     """sPSO PSI-Sum runner. Replaces KunlunPSISum for SPIKE 4.
 
     协议:

@@ -9,7 +9,7 @@
 
 import os
 from app import Config
-from .base import BaseGroupManager, KunlunRunner
+from .base import BaseGroupManager, BaseRunner
 from datetime import datetime
 
 # Lazy import spso_client at runtime to avoid import cycles
@@ -119,7 +119,7 @@ class SSPSIGroupManager(BaseGroupManager):
         return group_data
 
 
-class SpsoSSPSI(KunlunRunner):
+class SpsoSSPSI(BaseRunner):
     """sPSO SS-PSI runner (2-party secret-shared PSI / 秘密共享交集)。
 
     SPIKE 6 实现 (Option A - 真正 secret shares):

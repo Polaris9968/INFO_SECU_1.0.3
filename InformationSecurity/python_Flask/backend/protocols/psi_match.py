@@ -1,8 +1,7 @@
 # protocols/psi_match.py — PSI-Match 协议
 import os
 from app import Config
-from .base import BaseGroupManager, KunlunRunner
-
+from .base import BaseGroupManager, BaseRunner
 
 class PSIMatchGroupManager(BaseGroupManager):
     file_path = Config.PSI_MATCH_GROUPS_FILE
@@ -72,15 +71,5 @@ class PSIMatchGroupManager(BaseGroupManager):
         }
         return result
 
-
 # PSI-Match 复用 PSI-Card 的 Kunlun 二进制(同一份 my_mqrpmt_psi_card)
-class KunlunPSIMatch(KunlunRunner):
-    receiver_exec = 'my_mqrpmt_psi_card_receiver'
-    sender_exec = 'my_mqrpmt_psi_card_sender'
-    data_dir_attr = 'SPSO_PSI_CARD_DATA_DIR'
-    result_filenames = ('cardinality.txt',)
-    log_tag = 'Kunlun-PSIMatch'
 
-    @classmethod
-    def parse_result(cls, cardinality_txt='', **kwargs):
-        return {'cardinality': int(cardinality_txt.strip() or 0)}

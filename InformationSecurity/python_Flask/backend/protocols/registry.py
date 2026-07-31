@@ -7,12 +7,12 @@ SPIKE 3 集成: PROTOCOL_PSU / PROTOCOL_PSI_CARD / PROTOCOL_PSI_MATCH 切到 sPS
 Kunlun 类保留作 fallback(注释标 'SPIKE 3: fallback')。
 """
 from .base import ProtocolSpec
-from .psi import PSIGroupManager, KunlunPSI
+from .psi import PSIGroupManager
 from .spso import SpsoPSI, SpsoPSU, SpsoPSICard, SpsoPSIMatch, SpsoPSISum
-from .psi_card import PSICardGroupManager, KunlunPSICard
-from .psu import PSIUnionGroupManager, KunlunPSU
-from .psi_match import PSIMatchGroupManager, KunlunPSIMatch
-from .psi_sum import PSISumGroupManager, KunlunPSISum
+from .psi_card import PSICardGroupManager
+from .psu import PSIUnionGroupManager
+from .psi_match import PSIMatchGroupManager
+from .psi_sum import PSISumGroupManager
 from .ss_psi import SSPSIGroupManager, SpsoSSPSI
 
 
@@ -25,7 +25,7 @@ PROTOCOL_PSI = ProtocolSpec(
     page_filename='privacy_intersection.html',
     upload_data_dir_attr='SPSO_PSI_DATA_DIR',
     id_length=4,
-    runner_cls=SpsoPSI,        # SPIKE 2: 切到 sPSO,KunlunPSI 保留作 fallback
+    runner_cls=SpsoPSI,        # SPIKE 2: 切到 sPSO 保留作 fallback
     # 端点开关
     has_history=True,
     has_preview_ciphertext=True,
@@ -47,7 +47,7 @@ PROTOCOL_PSI_CARD = ProtocolSpec(
     page_filename='psi_match.html',
     upload_data_dir_attr='SPSO_PSI_CARD_DATA_DIR',
     id_length=4,
-    runner_cls=SpsoPSICard,           # SPIKE 3: 切到 sPSO,KunlunPSICard 保留作 fallback
+    runner_cls=SpsoPSICard,           # SPIKE 3: 切到 sPSO 保留作 fallback
     has_history=False,                       # PSI-Card 当前无多轮
     has_preview_ciphertext=False,
     has_download_result=True,
@@ -67,7 +67,7 @@ PROTOCOL_PSU = ProtocolSpec(
     page_filename='privacy_union.html',
     upload_data_dir_attr='SPSO_PSI_UNION_DATA_DIR',
     id_length=4,
-    runner_cls=SpsoPSU,               # SPIKE 3: 切到 sPSO,KunlunPSU 保留作 fallback
+    runner_cls=SpsoPSU,               # SPIKE 3: 切到 sPSO, 保留作 fallback
     has_history=True,
     has_preview_ciphertext=True,
     has_download_result=True,
@@ -87,7 +87,7 @@ PROTOCOL_PSI_MATCH = ProtocolSpec(
     page_filename='psi_match.html',
     upload_data_dir_attr='SPSO_PSI_CARD_DATA_DIR',   # PSI-Match 复用 PSI-Card 目录
     id_length=4,
-    runner_cls=SpsoPSIMatch,          # SPIKE 3: 切到 sPSO(用 psi 模拟),KunlunPSIMatch 保留作 fallback
+    runner_cls=SpsoPSIMatch,          # SPIKE 3: 切到 sPSO(用 psi 模拟) 保留作 fallback
     has_history=True,
     has_preview_ciphertext=True,
     has_download_result=False,                          # PSI-Match 无 download-result
@@ -107,7 +107,7 @@ PROTOCOL_PSI_SUM = ProtocolSpec(
     page_filename='psi_match.html',
     upload_data_dir_attr='SPSO_PSI_SUM_DATA_DIR',
     id_length=4,
-    runner_cls=SpsoPSISum,             # SPIKE 4: 切到 sPSO, KunlunPSISum 保留作 fallback
+    runner_cls=SpsoPSISum,             # SPIKE 4: 切到 sPSO 保留作 fallback
     has_history=True,
     has_preview_ciphertext=False,
     has_download_result=False,

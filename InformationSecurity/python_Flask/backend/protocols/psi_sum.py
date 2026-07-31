@@ -2,8 +2,7 @@
 import os
 from datetime import datetime
 from app import Config, _standardize_token
-from .base import BaseGroupManager, KunlunRunner
-
+from .base import BaseGroupManager, BaseRunner
 
 class PSISumGroupManager(BaseGroupManager):
     file_path = Config.PSI_SUM_GROUPS_FILE
@@ -115,7 +114,6 @@ class PSISumGroupManager(BaseGroupManager):
                 return True, "上传成功"
         return False, "小组不存在"
 
-
     @classmethod
     def _extract_uploads_snapshot(cls, group):
         """PSI-Sum: snapshot 包含 items + values"""
@@ -149,20 +147,3 @@ class PSISumGroupManager(BaseGroupManager):
                 return True
         return False
 
-
-class KunlunPSISum(KunlunRunner):
-    receiver_exec = 'my_mqrpmt_psi_sum_receiver'
-    sender_exec = 'my_mqrpmt_psi_sum_sender'
-    data_dir_attr = 'SPSO_PSI_SUM_DATA_DIR'
-    result_filenames = ('cardinality.txt', 'sum.txt')   # ★ 2 个结果文件
-    log_tag = 'Kunlun-PSISum'
-    spawn_order = 'sender_first'   # ★ PSI-Sum 反调度
-
-    @classmethod
-    def parse_result(cls, cardinality_txt='', sum_txt='', **kwargs):
-        sum_str = sum_txt.strip()
-        return {
-            'cardinality': int(cardinality_txt.strip() or 0),
-            'sum': int(sum_str) if sum_str.lstrip('-').isdigit() else 0,
-            'sum_str': sum_str,
-        }

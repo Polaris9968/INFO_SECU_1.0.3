@@ -414,16 +414,16 @@ class BaseGroupManager:
         return None, f"未知文件类型:{file_type}"
 
 
-# ==================== KunlunRunner ====================
-class KunlunRunner:
-    """Kunlun 二进制执行抽象。支持 mock 模式 (SS-PSI 用)。"""
+# ==================== BaseRunner (2026-07-31 改名 KunlunRunner → BaseRunner) ====================
+class BaseRunner:
+    """PSI 协议 runner 基类。所有 Spso* / Mock runner 继承此 (2026-07-31 改名 KunlunRunner)。"""
 
     # === 子类必须声明 ===
     receiver_exec: str = ''
     sender_exec: str = ''
     data_dir_attr: str = ''
     result_filenames: tuple = ()
-    log_tag: str = 'Kunlun'
+    log_tag: str = 'BaseRunner'
 
     # === 协议特定 ===
     spawn_order: str = 'receiver_first'   # PSI-Sum = 'sender_first'
@@ -433,93 +433,7 @@ class KunlunRunner:
     def run(cls, group_id):
         if cls.kind == 'mock':
             return cls._run_mock(group_id)
-        return cls._run_kunlun(group_id)
-
-    @classmethod
-    def _run_kunlun(cls, group_id):
-        """
-        通用骨架:spawn receiver + sender 子进程,读结果文件,parse。
-        差异:spawn 顺序由 spawn_order 决定;结果文件数由 result_filenames 决定。
-        """
-        from app import Config, _format_duration, _compute_with_timing
-        kunlun_build_dir = os.path.join(Config.KUNLUN_BASE, 'build')
-        data_dir = os.path.join(getattr(Config, cls.data_dir_attr), f"group_{group_id}")
-        os.makedirs(data_dir, exist_ok=True)
-
-        # 删旧结果文件
-        for fname in cls.result_filenames:
-            p = os.path.join(data_dir, fname)
-            if os.path.exists(p):
-                os.remove(p)
-
-        receiver_path = os.path.join(kunlun_build_dir, cls.receiver_exec)
-        sender_path = os.path.join(kunlun_build_dir, cls.sender_exec)
-
-        # 启动顺序
-        first_path, second_path = (
-            (sender_path, receiver_path) if cls.spawn_order == 'sender_first'
-            else (receiver_path, sender_path)
-        )
-        first_tag, second_tag = (
-            ('sender', 'receiver') if cls.spawn_order == 'sender_first'
-            else ('receiver', 'sender')
-        )
-
-        try:
-            print(f"[{cls.log_tag}] 启动 {first_tag}: {first_path}")
-            first_proc = subprocess.Popen(
-                [first_path, group_id],
-                cwd=kunlun_build_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            time.sleep(1.5)
-            print(f"[{cls.log_tag}] 启动 {second_tag}: {second_path}")
-            second_proc = subprocess.Popen(
-                [second_path, group_id],
-                cwd=kunlun_build_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            try:
-                stdout1, stderr1 = first_proc.communicate(timeout=300)
-                stdout2, stderr2 = second_proc.communicate(timeout=300)
-            except subprocess.TimeoutExpired:
-                first_proc.kill()
-                second_proc.kill()
-                return {'success': False, 'error': '计算超时(>300s)'}
-
-            if first_proc.returncode != 0:
-                err_text = (stderr1 or b'').decode('latin-1', errors='ignore')[:500]
-                return {'success': False, 'error': f'{first_tag} 计算失败: {err_text}'}
-            if second_proc.returncode != 0:
-                err_text = (stderr2 or b'').decode('latin-1', errors='ignore')[:500]
-                return {'success': False, 'error': f'{second_tag} 计算失败: {err_text}'}
-        except FileNotFoundError as e:
-            return {'success': False, 'error': f'Kunlun 二进制不存在: {e}'}
-        except Exception as e:
-            return {'success': False, 'error': f'启动 Kunlun 失败: {e}'}
-
-        # 读结果文件
-        result_texts = {}
-        for fname in cls.result_filenames:
-            fpath = os.path.join(data_dir, fname)
-            if os.path.exists(fpath):
-                with open(fpath, 'r', encoding='utf-8') as f:
-                    result_texts[fname] = f.read()
-            else:
-                return {'success': False, 'error': f'结果文件不存在: {fname}'}
-
-        # parse(避免 **dict 解包导致含点号的 key 掉落 —— 改为按位置传 string)
-        # 子类可重写 parse_result(cls, file1_text, file2_text, ...)
-        try:
-            args = [result_texts[f] for f in cls.result_filenames]
-            parsed = cls.parse_result(*args)
-        except Exception as e:
-            return {'success': False, 'error': f'解析结果失败: {e}'}
-
-        parsed['success'] = True
-        return parsed
+        return cls._run_mock(group_id)  # 2026-07-31: _run_kunlun() 死代码已删, 默认 fallthrough 到 _run_mock
 
     @classmethod
     def parse_result(cls, *result_texts):
