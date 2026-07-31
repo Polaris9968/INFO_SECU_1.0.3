@@ -1,7 +1,6 @@
 # ========================
 # 编译产物
 # ========================
-Kunlun/build/
 **/*.o
 **/*.a
 **/*.so
@@ -10,10 +9,6 @@ Kunlun/build/
 # ========================
 # 用户上传的真实数据（保密）
 # ========================
-Kunlun/PSO_data/PSI_data/
-Kunlun/PSO_data/PSI_union_data/
-Kunlun/PSO_data/PSI_card_data/
-Kunlun/PSO_data/PSI_sum_data/
 
 # ========================
 # 改色备份文件
@@ -62,11 +57,8 @@ secrets.json
 # ========================
 node_modules/
 dist/
-# Kunlun 是第三方库，库内的 .git 不上传
-Kunlun/.git
 
 # 其他旧 build 目录
-Kunlun/build_mixed/
 
 # 运行时用户数据（密码哈希/邮箱/小组数据，绝密）
 InformationSecurity/python_Flask/backend/data/
