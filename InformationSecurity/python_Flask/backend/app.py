@@ -16,6 +16,7 @@ import hashlib
 from datetime import datetime, timedelta
 from functools import wraps
 
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -23,6 +24,10 @@ from flask_limiter.util import get_remote_address
 from werkzeug.utils import secure_filename
 import bcrypt
 import jwt
+
+# 加载 .env (dev 阶段用)。load_dotenv 默认 override=False,
+# 已 export 的环境变量优先于 .env,所以 systemd 注入的 env 仍生效。
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 
 
 # ==================== 配置 ====================
@@ -54,16 +59,17 @@ class Config:
 
     STATIC_FOLDER = os.path.join(os.path.dirname(BASE_DIR), 'frontend')
 
-    # ==================== Kunlun 库路径(统一管理)====================
-    # 所有 Kunlun 相关路径都从 KUNLUN_BASE 派生,未来迁移项目只改这里
-    KUNLUN_BASE = "/root/projects/INFO_SECU_1.0.3/Kunlun"
-    KUNLUN_BUILD_DIR = os.path.join(KUNLUN_BASE, "build")
-    KUNLUN_DATA_DIR = os.path.join(KUNLUN_BASE, "PSO_data")
-    KUNLUN_PSI_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_data")
-    KUNLUN_PSI_CARD_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_card_data")
-    KUNLUN_PSI_UNION_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_union_data")
-    KUNLUN_PSI_SUM_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_sum_data")
-    KUNLUN_SS_PSI_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "SS_PSI_data")
+    # ==================== sPSO 数据路径(2026-07-31 从 Kunlun 迁移)====================
+    # 历史: 1.0.x 用 Kunlun 库,KUNLUN_BASE 派生 6 个 KUNLUN_xxx_DATA_DIR
+    # 1.0.3 切到 sPSO (2026-07-28 ~ 07-29 SPIKE 2-4),但 data dir 仍在 Kunlun/PSO_data/
+    # 2026-07-31 清理: 改成 SPSO_DATA_DIR 派生, 不再依赖 Kunlun 目录
+    SPSO_DATA_DIR = os.path.join(BASE_DIR, "data", "sPSO_data")
+    SPSO_PSI_DATA_DIR = os.path.join(SPSO_DATA_DIR, "PSI_data")
+    SPSO_PSI_CARD_DATA_DIR = os.path.join(SPSO_DATA_DIR, "PSI_card_data")
+    SPSO_PSI_UNION_DATA_DIR = os.path.join(SPSO_DATA_DIR, "PSI_union_data")
+    SPSO_PSI_SUM_DATA_DIR = os.path.join(SPSO_DATA_DIR, "PSI_sum_data")
+    SPSO_SS_PSI_DATA_DIR = os.path.join(SPSO_DATA_DIR, "SS_PSI_data")
+    # KUNLUN_* 路径保留作 deprecation 过渡 (Phase 3 删), 当前协议已不用
 
     # ==================== 服务器配置 ====================
     HOST = "0.0.0.0"
@@ -208,6 +214,7 @@ def _probe_json_paths(content):
     - path 是相对路径(去除 items / 顶层数组包裹),直接传给 _extract_by_path
     - 过滤掉元数据字段(description / meta / note / comment / _id / index)
     - 只支持 list-of-dict 结构;纯数组 / 嵌套 list 不展开
+    2026-07-30 放宽:不再只认 items/data/records,识别任意顶层 list 字段 (优先级 items>data>records>其他)
     """
     try:
         data = json.loads(content)
@@ -218,13 +225,22 @@ def _probe_json_paths(content):
         source = data
         wrapper = ''  # 顶层数组:不包裹层
     elif isinstance(data, dict):
-        for key in ('items', 'data', 'records'):
+        # 2026-07-30: 先试标准 wrapper,再 fallback 到任意顶层 list 字段
+        STANDARD_WRAPPERS = ('items', 'data', 'records')
+        wrapper = None
+        for key in STANDARD_WRAPPERS:
             if key in data and isinstance(data[key], list):
                 source = data[key]
-                wrapper = key  # 用作展示前缀
+                wrapper = key
                 break
-        else:
-            raise ValueError("JSON 需要是数组,或包含 items/data/records 数组的字段")
+        if wrapper is None:
+            list_keys = [k for k, v in data.items() if isinstance(v, list) and v]
+            if not list_keys:
+                raise ValueError("JSON 需要是数组,或包含数组字段的对象")
+            # 取第一个非空 list 字段 (避免 None/空 list 误中)
+            first_key = list_keys[0]
+            source = data[first_key]
+            wrapper = first_key
     else:
         raise ValueError("JSON 顶层必须是数组或对象")
 
@@ -341,17 +357,35 @@ def _extract_by_path(data_list, path):
     return result
 
 
+def _pick_top_list_field(data, prefer=('items', 'data', 'records')):
+    """2026-07-30: 从 dict 中挑选一个 list 字段。
+    优先顺序:items > data > records > 第一个非空 list 字段。
+    返回 (source, key) 或 (None, None)。
+    """
+    for k in prefer:
+        if k in data and isinstance(data[k], list):
+            return data[k], k
+    for k, v in data.items():
+        if isinstance(v, list) and v:
+            return v, k
+    return None, None
+
+
 def _parse_json_items(content, path=None):
     """解析 JSON 内容,返回原始 token 列表(不标准化,交给上层统一处理)。
     档 1:
         ["a", "b"]                     → ["a", "b"]
         {"items": ["a", "b"]}          → ["a", "b"]
+        {"users": ["a", "b"]}          → ["a", "b"]  (2026-07-30 放宽,识别任意顶层 list 字段)
     档 2:
         {"path": "user.email",
          "data": [{"user": {"email": "a"}}, ...]}  → 走 path 提取
         {"path": "user.email",
          "items": [{"user": {"email": "a"}}, ...]}  → items 优先于 data
+        {"path": "user.email",
+         "users": [{"user": {"email": "a"}}, ...]}  → 2026-07-30 也识别 users
     2026-07-02:path 参数(可选)由调用方传入 ① 优先于 ② JSON 顶层字段
+    2026-07-30:放宽 wrapper 识别 (items/data/records 或任意顶层 list 字段)
     失败:raise ValueError,给中文友好错误
     """
     try:
@@ -371,23 +405,19 @@ def _parse_json_items(content, path=None):
     if effective_path is not None:
         if not isinstance(effective_path, str) or not effective_path.strip():
             raise ValueError("path 字段必须是非空字符串")
-        source = data.get('items')
+        source, key = _pick_top_list_field(data)
         if source is None:
-            source = data.get('data')
-        if source is None:
-            raise ValueError("path 模式下需要 items 或 data 字段")
+            raise ValueError("path 模式下需要 items/data/records 或其他顶层 list 字段")
         if not isinstance(source, list):
-            raise ValueError("items/data 字段必须是数组")
+            raise ValueError(f"{key} 字段必须是数组")
         return _extract_by_path(source, effective_path)
 
-    # 档 1b: 对象有 items 字段
-    if 'items' in data:
-        items = data['items']
-        if not isinstance(items, list):
-            raise ValueError("items 字段必须是数组")
-        return [str(x) if x is not None else '' for x in items]
+    # 档 1b: 任意顶层 list 字段 (2026-07-30 放宽)
+    source, key = _pick_top_list_field(data)
+    if source is not None:
+        return [str(x) if x is not None else '' for x in source]
 
-    raise ValueError("对象需要 items 字段,或 path + items/data 字段")
+    raise ValueError("对象需要顶层数组字段 (items/data/records 或其他任意 list 字段)")
 
 
 def extract_items_from_file(content, filename, mode='auto', path=None):
@@ -442,18 +472,22 @@ def read_intersection_from_file(group_id):
     intersection = []
     for line in content.split('\n'):
         line = line.strip()
-        if line:
-            try:
-                if '.' in line:
-                    num = float(line)
-                    if num.is_integer():
-                        intersection.append(int(num))
-                    else:
-                        intersection.append(num)
+        if not line:
+            continue
+        # 2026-07-30 防御:跳过 SPIKE 2 sPSO padding sentinel
+        if line.startswith('__spike2_pad_'):
+            continue
+        try:
+            if '.' in line:
+                num = float(line)
+                if num.is_integer():
+                    intersection.append(int(num))
                 else:
-                    intersection.append(int(line))
-            except ValueError:
-                intersection.append(line)
+                    intersection.append(num)
+            else:
+                intersection.append(int(line))
+        except ValueError:
+            intersection.append(line)
 
     return intersection
 
@@ -508,277 +542,30 @@ def read_union_from_file(group_id):
     union_result = []
     for line in content.split('\n'):
         line = line.strip()
-        if line:
-            try:
-                if '.' in line:
-                    num = float(line)
-                    if num.is_integer():
-                        union_result.append(int(num))
-                    else:
-                        union_result.append(num)
+        if not line:
+            continue
+        # 2026-07-30 防御:跳过 SPIKE 2 sPSO padding sentinel (eg. __spike2_pad_sender_24)
+        # Kunlun 不知道 padding 概念,会把 sentinel 当 token 写入 result 文件。
+        # 根治要等 sPSO padding 不污染 input。
+        if line.startswith('__spike2_pad_'):
+            continue
+        try:
+            if '.' in line:
+                num = float(line)
+                if num.is_integer():
+                    union_result.append(int(num))
                 else:
-                    union_result.append(int(line))
-            except ValueError:
-                union_result.append(line)
+                    union_result.append(num)
+            else:
+                union_result.append(int(line))
+        except ValueError:
+            union_result.append(line)
 
     return union_result
 
 # ==================== Kunlun PSI 调用 ====================
-def run_kunlun_psi(group_id):
-    """调用 Kunlun 可执行文件执行 PSI 计算"""
-    kunlun_build_dir = Config.KUNLUN_BUILD_DIR
-    receiver_exec = os.path.join(kunlun_build_dir, "my_mqrpmt_psi_receiver")
-    sender_exec = os.path.join(kunlun_build_dir, "my_mqrpmt_psi_sender")
-
-    psi_data_dir = Config.KUNLUN_PSI_DATA_DIR
-    group_dir = os.path.join(psi_data_dir, f"group_{group_id}")
-    os.makedirs(group_dir, exist_ok=True)
-
-    result_file = os.path.join(group_dir, "intersection.txt")
-
-    if not os.path.exists(receiver_exec):
-        return {'success': False, 'error': f'接收方可执行文件不存在: {receiver_exec}'}
-    if not os.path.exists(sender_exec):
-        return {'success': False, 'error': f'发送方可执行文件不存在: {sender_exec}'}
-
-    if os.path.exists(result_file):
-        os.remove(result_file)
-
-    print(f"[Kunlun] 启动接收方进程... (group: {group_id})")
-    receiver_proc = subprocess.Popen(
-        [receiver_exec, group_id],
-        cwd=kunlun_build_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='latin-1'
-    )
-
-    time.sleep(1.5)
-
-    print(f"[Kunlun] 启动发送方进程... (group: {group_id})")
-    sender_proc = subprocess.Popen(
-        [sender_exec, group_id],
-        cwd=kunlun_build_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='latin-1'
-    )
-
-    try:
-        sender_stdout, sender_stderr = sender_proc.communicate(timeout=300)
-        receiver_stdout, receiver_stderr = receiver_proc.communicate(timeout=300)
-    except subprocess.TimeoutExpired:
-        sender_proc.kill()
-        receiver_proc.kill()
-        return {'success': False, 'error': 'PSI 计算超时(超过300秒)'}
-
-    if sender_proc.returncode != 0:
-        print(f"[Kunlun] 发送方错误: {sender_stderr}")
-        return {'success': False, 'error': f'发送方执行失败: {sender_stderr}'}
-
-    if receiver_proc.returncode != 0:
-        print(f"[Kunlun] 接收方错误: {receiver_stderr}")
-        return {'success': False, 'error': f'接收方执行失败: {receiver_stderr}'}
-
-    if not os.path.exists(result_file):
-        return {'success': False, 'error': '结果文件未生成'}
-
-    with open(result_file, 'r', encoding='latin-1') as f:
-        content = f.read().strip()
-
-    intersection = []
-    for line in content.split('\n'):
-        line = line.strip()
-        if line:
-            try:
-                if '.' in line:
-                    num = float(line)
-                    if num.is_integer():
-                        intersection.append(int(num))
-                    else:
-                        intersection.append(num)
-                else:
-                    intersection.append(int(line))
-            except ValueError:
-                intersection.append(line)
-
-    print(f"[Kunlun] PSI 计算完成,交集大小: {len(intersection)}")
-
-    return {
-        'success': True,
-        'intersection': intersection,
-        'count': len(intersection)
-    }
-
 # ==================== Kunlun PSI_card 调用 ====================
-def run_kunlun_psi_card(group_id):
-    """调用 Kunlun 可执行文件执行 PSI-Card 计算(交集基数)"""
-    kunlun_build_dir = Config.KUNLUN_BUILD_DIR
-    receiver_exec = os.path.join(kunlun_build_dir, "my_mqrpmt_psi_card_receiver")
-    sender_exec = os.path.join(kunlun_build_dir, "my_mqrpmt_psi_card_sender")
-
-    psi_card_data_dir = Config.KUNLUN_PSI_CARD_DATA_DIR
-    group_dir = os.path.join(psi_card_data_dir, f"group_{group_id}")
-    os.makedirs(group_dir, exist_ok=True)
-
-    result_file = os.path.join(group_dir, "cardinality.txt")
-
-    if not os.path.exists(receiver_exec):
-        return {'success': False, 'error': f'接收方可执行文件不存在: {receiver_exec}'}
-    if not os.path.exists(sender_exec):
-        return {'success': False, 'error': f'发送方可执行文件不存在: {sender_exec}'}
-
-    if os.path.exists(result_file):
-        os.remove(result_file)
-
-    print(f"[Kunlun-Card] 启动接收方进程... (group: {group_id})")
-    receiver_proc = subprocess.Popen(
-        [receiver_exec, group_id],
-        cwd=kunlun_build_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='latin-1'
-    )
-
-    time.sleep(1.5)
-
-    print(f"[Kunlun-Card] 启动发送方进程... (group: {group_id})")
-    sender_proc = subprocess.Popen(
-        [sender_exec, group_id],
-        cwd=kunlun_build_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='latin-1'
-    )
-
-    try:
-        sender_stdout, sender_stderr = sender_proc.communicate(timeout=300)
-        receiver_stdout, receiver_stderr = receiver_proc.communicate(timeout=300)
-    except subprocess.TimeoutExpired:
-        sender_proc.kill()
-        receiver_proc.kill()
-        return {'success': False, 'error': 'PSI-Card 计算超时(超过300秒)'}
-
-    if sender_proc.returncode != 0:
-        print(f"[Kunlun-Card] 发送方错误: {sender_stderr}")
-        return {'success': False, 'error': f'发送方执行失败: {sender_stderr}'}
-
-    if receiver_proc.returncode != 0:
-        print(f"[Kunlun-Card] 接收方错误: {receiver_stderr}")
-        return {'success': False, 'error': f'接收方执行失败: {receiver_stderr}'}
-
-    if not os.path.exists(result_file):
-        return {'success': False, 'error': '结果文件未生成'}
-
-    with open(result_file, 'r', encoding='latin-1') as f:
-        content = f.read().strip()
-
-    try:
-        cardinality = int(content)
-    except ValueError:
-        return {'success': False, 'error': f'无法解析基数结果: {content}'}
-
-    print(f"[Kunlun-Card] PSI-Card 计算完成,交集基数: {cardinality}")
-
-    return {
-        'success': True,
-        'cardinality': cardinality
-    }
-
 # ==================== Kunlun PSU 调用 ====================
-def run_kunlun_psu(group_id):
-    """调用 Kunlun 可执行文件执行 PSU 计算(并集)"""
-    kunlun_build_dir = Config.KUNLUN_BUILD_DIR
-    receiver_exec = os.path.join(kunlun_build_dir, "my_mqrpmt_psu_receiver")
-    sender_exec = os.path.join(kunlun_build_dir, "my_mqrpmt_psu_sender")
-
-    psi_union_data_dir = Config.KUNLUN_PSI_UNION_DATA_DIR
-    group_dir = os.path.join(psi_union_data_dir, f"group_{group_id}")
-    os.makedirs(group_dir, exist_ok=True)
-
-    result_file = os.path.join(group_dir, "union.txt")
-
-    if not os.path.exists(receiver_exec):
-        return {'success': False, 'error': f'接收方可执行文件不存在: {receiver_exec}'}
-    if not os.path.exists(sender_exec):
-        return {'success': False, 'error': f'发送方可执行文件不存在: {sender_exec}'}
-
-    if os.path.exists(result_file):
-        os.remove(result_file)
-
-    print(f"[Kunlun-PSU] 启动接收方进程... (group: {group_id})")
-    receiver_proc = subprocess.Popen(
-        [receiver_exec, group_id],
-        cwd=kunlun_build_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='latin-1'
-    )
-
-    time.sleep(1.5)
-
-    print(f"[Kunlun-PSU] 启动发送方进程... (group: {group_id})")
-    sender_proc = subprocess.Popen(
-        [sender_exec, group_id],
-        cwd=kunlun_build_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='latin-1'
-    )
-
-    try:
-        sender_stdout, sender_stderr = sender_proc.communicate(timeout=300)
-        receiver_stdout, receiver_stderr = receiver_proc.communicate(timeout=300)
-    except subprocess.TimeoutExpired:
-        sender_proc.kill()
-        receiver_proc.kill()
-        return {'success': False, 'error': 'PSU 计算超时(超过300秒)'}
-
-    if sender_proc.returncode != 0:
-        print(f"[Kunlun-PSU] 发送方错误: {sender_stderr}")
-        return {'success': False, 'error': f'发送方执行失败: {sender_stderr}'}
-
-    if receiver_proc.returncode != 0:
-        print(f"[Kunlun-PSU] 接收方错误: {receiver_stderr}")
-        return {'success': False, 'error': f'接收方执行失败: {receiver_stderr}'}
-
-    if not os.path.exists(result_file):
-        return {'success': False, 'error': '结果文件未生成'}
-
-    with open(result_file, 'r', encoding='latin-1') as f:
-        content = f.read().strip()
-
-    union_result = []
-    for line in content.split('\n'):
-        line = line.strip()
-        if line:
-            try:
-                if '.' in line:
-                    num = float(line)
-                    if num.is_integer():
-                        union_result.append(int(num))
-                    else:
-                        union_result.append(num)
-                else:
-                    union_result.append(int(line))
-            except ValueError:
-                union_result.append(line)
-
-    print(f"[Kunlun-PSU] PSU 计算完成,并集大小: {len(union_result)}")
-
-    return {
-        'success': True,
-        'union': union_result,
-        'count': len(union_result)
-    }
-
-
 def _format_duration(seconds):
     """自适应时间显示。<60s "X.XX 秒";<3600s "X 分 Y 秒";>=3600s "X 小时 Y 分 Y 秒" """
     seconds = float(seconds)
@@ -793,97 +580,6 @@ def _format_duration(seconds):
 
 
 # ==================== Kunlun PSI-Sum 调用 ====================
-def run_kunlun_psi_sum(group_id):
-    """调用 Kunlun 可执行文件执行 PSI-Sum 计算(交集基数 + 关联求和)
-
-    注意:跟 PSI-Card / PSU 不同,PSI-Sum 的 sender 是 server 监听端口,
-    receiver 是 client 连过去 -- 调度顺序必须 **先 sender 后 receiver**。
-    """
-    kunlun_build_dir = Config.KUNLUN_BUILD_DIR
-    sender_exec = os.path.join(kunlun_build_dir, "my_mqrpmt_psi_sum_sender")
-    receiver_exec = os.path.join(kunlun_build_dir, "my_mqrpmt_psi_sum_receiver")
-
-    psi_sum_data_dir = Config.KUNLUN_PSI_SUM_DATA_DIR
-    group_dir = os.path.join(psi_sum_data_dir, f"group_{group_id}")
-    os.makedirs(group_dir, exist_ok=True)
-
-    cardinality_file = os.path.join(group_dir, "cardinality.txt")
-    sum_file = os.path.join(group_dir, "sum.txt")
-
-    if not os.path.exists(receiver_exec):
-        return {'success': False, 'error': f'接收方可执行文件不存在: {receiver_exec}'}
-    if not os.path.exists(sender_exec):
-        return {'success': False, 'error': f'发送方可执行文件不存在: {sender_exec}'}
-
-    for f in (cardinality_file, sum_file):
-        if os.path.exists(f):
-            os.remove(f)
-
-    # sender 先启动 (监听端口)
-    print(f"[Kunlun-Sum] 启动发送方进程 (sender 监听) ... (group: {group_id})")
-    sender_proc = subprocess.Popen(
-        [sender_exec, group_id],
-        cwd=kunlun_build_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='latin-1'
-    )
-
-    time.sleep(1.5)
-
-    # receiver 后启动 (连过去)
-    print(f"[Kunlun-Sum] 启动接收方进程 (receiver connect) ... (group: {group_id})")
-    receiver_proc = subprocess.Popen(
-        [receiver_exec, group_id],
-        cwd=kunlun_build_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding='latin-1'
-    )
-
-    try:
-        sender_stdout, sender_stderr = sender_proc.communicate(timeout=300)
-        receiver_stdout, receiver_stderr = receiver_proc.communicate(timeout=300)
-    except subprocess.TimeoutExpired:
-        sender_proc.kill()
-        receiver_proc.kill()
-        return {'success': False, 'error': 'PSI-Sum 计算超时(超过300秒)'}
-
-    if sender_proc.returncode != 0:
-        print(f"[Kunlun-Sum] 发送方错误: {sender_stderr}")
-        return {'success': False, 'error': f'发送方执行失败: {sender_stderr}'}
-
-    if receiver_proc.returncode != 0:
-        print(f"[Kunlun-Sum] 接收方错误: {receiver_stderr}")
-        return {'success': False, 'error': f'接收方执行失败: {receiver_stderr}'}
-
-    if not os.path.exists(cardinality_file):
-        return {'success': False, 'error': 'cardinality 结果文件未生成'}
-    if not os.path.exists(sum_file):
-        return {'success': False, 'error': 'sum 结果文件未生成'}
-
-    with open(cardinality_file, 'r', encoding='latin-1') as f:
-        cardinality = int(f.read().strip())
-    with open(sum_file, 'r', encoding='latin-1') as f:
-        sum_str = f.read().strip()
-    # sum 是 BigInt,可能超过 JS Number 范围 -- 保持为字符串返回
-    try:
-        sum_val = int(sum_str)
-    except ValueError:
-        sum_val = sum_str
-
-    print(f"[Kunlun-Sum] PSI-Sum 计算完成, 交集基数: {cardinality}, SUM: {sum_str}")
-
-    return {
-        'success': True,
-        'cardinality': cardinality,
-        'sum': sum_val,
-        'sum_str': sum_str,
-    }
-
-
 def _compute_with_timing(run_func, group_id):
     """包一层计时;调 run_func(group_id),success 时给返回字典塞 duration_seconds/duration_human"""
     t0 = time.time()
@@ -1098,7 +794,12 @@ def index():
 
 @app.route('/home.html')
 def home():
-    return send_from_directory(STATIC_FOLDER_ABS, 'home.html')
+    # 2026-07-30 Friday fix: dev 模式禁缓存(Chrome 会缓存 home.html, 改完看不到新 UI)
+    response = send_from_directory(STATIC_FOLDER_ABS, 'home.html')
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route('/collaborate.html')
@@ -1121,7 +822,12 @@ def privacy_union():
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    return send_from_directory(STATIC_FOLDER_ABS, filename)
+    # 2026-07-30 Friday fix: 开发模式禁止缓存静态文件(避免 Chrome 缓存旧 JS 导致修了不生效)
+    response = send_from_directory(STATIC_FOLDER_ABS, filename)
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 # ==================== API 路由 ====================
@@ -1129,11 +835,25 @@ def serve_static(filename):
 
 # ==================== 协议路由注册(2026-07-08 重构) ====================
 # 81 个协议路由由 protocols.routes 工厂生成
-from protocols.routes import register_routes as _register_protocol_routes
-_register_protocol_routes(app)
+# Friday 22:15: 改成函数内 import,避开循环(protocols/psi.py 顶部 from app import Config vs app.py 末尾 register_routes 互锁)
+def _register_protocol_routes_lazy():
+    from protocols.routes import register_routes
+    register_routes(app)
+
+# Friday 22:23: 加 error handler 把 500 traceback 打到 stderr (DEBUG=False 抓不到)
+@app.errorhandler(Exception)
+def _friday_error_log(e):
+    import traceback
+    import sys as _sys  # 2026-07-30 Friday fix: 之前漏 import sys 导致 handler 自己 NameError
+    traceback.print_exc()
+    _sys.stdout.flush()
+    return jsonify({'error': f'internal: {type(e).__name__}: {str(e)[:300]}'}), 500
 
 # ==================== 启动程序 ====================
 if __name__ == '__main__':
+    # 在 main 块里才走完整 import 链,避免循环加载时 protocols/* 的 `from app import` 撞 partial module
+    _register_protocol_routes_lazy()
+
     print("=" * 50)
     print("🚀 Flask 服务器启动中...")
     print("=" * 50)

@@ -1,8 +1,7 @@
 # protocols/psi.py — PSI 协议
 import os
 from app import Config, read_intersection_from_file
-from .base import BaseGroupManager, KunlunRunner
-
+from .base import BaseGroupManager, BaseRunner
 
 class PSIGroupManager(BaseGroupManager):
     file_path = Config.PSI_GROUPS_FILE
@@ -11,7 +10,7 @@ class PSIGroupManager(BaseGroupManager):
 
     supports_history = True
     result_field = 'psi_result'
-    data_dir_attr = 'KUNLUN_PSI_DATA_DIR'
+    data_dir_attr = 'SPSO_PSI_DATA_DIR'
 
     archive_filenames = (
         'receiver.txt', 'sender.txt', 'intersection.txt',
@@ -36,10 +35,3 @@ class PSIGroupManager(BaseGroupManager):
         'result_with_original':  lambda role, **kw: 'intersection_with_original',
     }
 
-
-class KunlunPSI(KunlunRunner):
-    receiver_exec = 'my_mqrpmt_psi_receiver'
-    sender_exec = 'my_mqrpmt_psi_sender'
-    data_dir_attr = 'KUNLUN_PSI_DATA_DIR'
-    result_filenames = ('intersection.txt',)
-    log_tag = 'Kunlun-PSI'

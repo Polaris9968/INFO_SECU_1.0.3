@@ -62,6 +62,14 @@ async function initPage() {
 
 // ==================== 页面切换函数 ====================
 function showPage(page) {
+    // 2026-07-30 Friday fix: 切换 tab 前停掉所有 PSI tab 的轮询 timer,避免多个 tab 同时轮询
+    // init 函数会启动新 tab 的 timer
+    if (typeof PSI_INT   !== "undefined" && PSI_INT.stop)   PSI_INT.stop();
+    if (typeof PSI_MATCH !== "undefined" && PSI_MATCH.stop) PSI_MATCH.stop();
+    if (typeof PSI_UNION !== "undefined" && PSI_UNION.stop) PSI_UNION.stop();
+    if (typeof PSI_SUM   !== "undefined" && PSI_SUM.stop)   PSI_SUM.stop();
+    if (typeof SS_PSI    !== "undefined" && SS_PSI.stop)    SS_PSI.stop();
+
     // 隐藏所有页面(包括 3 个嵌入的子页面,SPA 化后)
     ["homePage", "profilePage", "settingsPage", "adminPage",
      "psiIntPage", "psiMatchPage", "psiUnionPage",

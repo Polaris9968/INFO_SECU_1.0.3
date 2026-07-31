@@ -1,7 +1,6 @@
 # protocols/psu.py — PSU (Private Set Union) 协议
 from app import Config, read_union_from_file
-from .base import BaseGroupManager, KunlunRunner
-
+from .base import BaseGroupManager, BaseRunner
 
 class PSIUnionGroupManager(BaseGroupManager):
     file_path = Config.PSI_UNION_GROUPS_FILE
@@ -10,7 +9,7 @@ class PSIUnionGroupManager(BaseGroupManager):
 
     supports_history = True
     result_field = 'union_result'
-    data_dir_attr = 'KUNLUN_PSI_UNION_DATA_DIR'
+    data_dir_attr = 'SPSO_PSI_UNION_DATA_DIR'
 
     archive_filenames = (
         'receiver.txt', 'sender.txt', 'union.txt',
@@ -52,10 +51,3 @@ class PSIUnionGroupManager(BaseGroupManager):
                 pass
         return result
 
-
-class KunlunPSU(KunlunRunner):
-    receiver_exec = 'my_mqrpmt_psu_receiver'
-    sender_exec = 'my_mqrpmt_psu_sender'
-    data_dir_attr = 'KUNLUN_PSI_UNION_DATA_DIR'
-    result_filenames = ('union.txt',)
-    log_tag = 'Kunlun-PSU'

@@ -3,17 +3,15 @@
 基于对 app.py 实际 @app.route 的精确统计(81 协议路由 + 2 demo = 83)。
 
 SPIKE 2 集成: PROTOCOL_PSI 的 runner_cls 从 KunlunPSI 切到 SpsoPSI。
-SPIKE 3 集成: PROTOCOL_PSU / PROTOCOL_PSI_CARD / PROTOCOL_PSI_MATCH 切到 sPSO。
-Kunlun 类保留作 fallback(注释标 'SPIKE 3: fallback')。
 """
 from .base import ProtocolSpec
-from .psi import PSIGroupManager
-from .spso import SpsoPSI, SpsoPSU, SpsoPSICard, SpsoPSIMatch, SpsoPSISum
-from .psi_card import PSICardGroupManager
-from .psu import PSIUnionGroupManager
-from .psi_match import PSIMatchGroupManager
-from .psi_sum import PSISumGroupManager
-from .ss_psi import SSPSIGroupManager, SpsoSSPSI
+from .psi import PSIGroupManager, KunlunPSI
+from .spso import SpsoPSI
+from .psi_card import PSICardGroupManager, KunlunPSICard
+from .psu import PSIUnionGroupManager, KunlunPSU
+from .psi_match import PSIMatchGroupManager, KunlunPSIMatch
+from .psi_sum import PSISumGroupManager, KunlunPSISum
+from .ss_psi import SSPSIGroupManager, MockSSPSI
 
 
 # ==================== 6 个 ProtocolSpec ====================
@@ -23,9 +21,9 @@ PROTOCOL_PSI = ProtocolSpec(
     url_prefix='/api/psi-group',
     manager_cls=PSIGroupManager,
     page_filename='privacy_intersection.html',
-    upload_data_dir_attr='SPSO_PSI_DATA_DIR',
+    upload_data_dir_attr='KUNLUN_PSI_DATA_DIR',
     id_length=4,
-    runner_cls=SpsoPSI,        # SPIKE 2: 切到 sPSO 保留作 fallback
+    runner_cls=SpsoPSI,        # SPIKE 2: 切到 sPSO,KunlunPSI 保留作 fallback
     # 端点开关
     has_history=True,
     has_preview_ciphertext=True,
@@ -45,9 +43,9 @@ PROTOCOL_PSI_CARD = ProtocolSpec(
     url_prefix='/api/psi-card-group',
     manager_cls=PSICardGroupManager,
     page_filename='psi_match.html',
-    upload_data_dir_attr='SPSO_PSI_CARD_DATA_DIR',
+    upload_data_dir_attr='KUNLUN_PSI_CARD_DATA_DIR',
     id_length=4,
-    runner_cls=SpsoPSICard,           # SPIKE 3: 切到 sPSO 保留作 fallback
+    runner_cls=KunlunPSICard,
     has_history=False,                       # PSI-Card 当前无多轮
     has_preview_ciphertext=False,
     has_download_result=True,
@@ -65,9 +63,9 @@ PROTOCOL_PSU = ProtocolSpec(
     url_prefix='/api/psi-union-group',
     manager_cls=PSIUnionGroupManager,
     page_filename='privacy_union.html',
-    upload_data_dir_attr='SPSO_PSI_UNION_DATA_DIR',
+    upload_data_dir_attr='KUNLUN_PSI_UNION_DATA_DIR',
     id_length=4,
-    runner_cls=SpsoPSU,               # SPIKE 3: 切到 sPSO, 保留作 fallback
+    runner_cls=KunlunPSU,
     has_history=True,
     has_preview_ciphertext=True,
     has_download_result=True,
@@ -85,9 +83,9 @@ PROTOCOL_PSI_MATCH = ProtocolSpec(
     url_prefix='/api/psi-match-group',
     manager_cls=PSIMatchGroupManager,
     page_filename='psi_match.html',
-    upload_data_dir_attr='SPSO_PSI_CARD_DATA_DIR',   # PSI-Match 复用 PSI-Card 目录
+    upload_data_dir_attr='KUNLUN_PSI_CARD_DATA_DIR',   # PSI-Match 复用 PSI-Card 目录
     id_length=4,
-    runner_cls=SpsoPSIMatch,          # SPIKE 3: 切到 sPSO(用 psi 模拟) 保留作 fallback
+    runner_cls=KunlunPSIMatch,
     has_history=True,
     has_preview_ciphertext=True,
     has_download_result=False,                          # PSI-Match 无 download-result
@@ -105,9 +103,9 @@ PROTOCOL_PSI_SUM = ProtocolSpec(
     url_prefix='/api/psi-sum-group',
     manager_cls=PSISumGroupManager,
     page_filename='psi_match.html',
-    upload_data_dir_attr='SPSO_PSI_SUM_DATA_DIR',
+    upload_data_dir_attr='KUNLUN_PSI_SUM_DATA_DIR',
     id_length=4,
-    runner_cls=SpsoPSISum,             # SPIKE 4: 切到 sPSO 保留作 fallback
+    runner_cls=KunlunPSISum,
     has_history=True,
     has_preview_ciphertext=False,
     has_download_result=False,
@@ -128,24 +126,21 @@ PROTOCOL_SS_PSI = ProtocolSpec(
     protocol_id='ss_psi',
     url_prefix='/api/ss-psi-groups',                   # ★ 复数
     manager_cls=SSPSIGroupManager,
-    page_filename=None,  # SPIKE 5 (2026-07-30):dead ref, ss_psi.html 文件从未存在,
-                         # SS-PSI UI 全在 home.html 嵌入 + window.SS_PSI IIFE
-                         # 必须传 (ProtocolSpec.__init__ 必填位置参数),
-                         # 但 routes.py 不读这个字段,所以 None 是安全的
-    upload_data_dir_attr='SPSO_SS_PSI_DATA_DIR',
+    page_filename='ss_psi.html',                       # 前端页面(待确认)
+    upload_data_dir_attr='KUNLUN_SS_PSI_DATA_DIR',
     id_length=4,
-    max_members=2,  # SPIKE 5: 2-party
-    runner_cls=SpsoSSPSI,
-    is_mock=False,
-    has_history=True,                # 2026-07-30 SPIKE 6: 哥反馈缺下一轮按钮
+    max_members=4,  # SS-PSI EXPECTED_PARTIES
+    runner_cls=MockSSPSI,
+    is_mock=True,
+    has_history=False,
     has_preview_ciphertext=False,
     has_download_result=False,
     has_download_result_with_original=False,
     has_download_ciphertext_by_role=False,
     has_download_original_by_role=False,
-    has_download_round=True,         # 2026-07-31 哥要历史记录 UI,启用 round download endpoint
+    has_download_round=False,
     has_demo_endpoint=True,
-    finalize_round_endpoint=True,    # SPIKE 6: 启用了 finalize_round
+    finalize_round_endpoint=False,
     start_computation_endpoint=True,
     # SS-PSI 特殊
     supports_leave=False,

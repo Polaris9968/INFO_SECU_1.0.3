@@ -55,7 +55,7 @@ _PROTOCOL_EXTRAS_CONFIG = {
         'reader': 'read_union_from_file',
         'completed_field': 'union_completed',
         'count_field': 'union_count',
-        'preview_field': 'result_preview',  # 2026-07-30 fix: 前端读 result_preview, 后端之前用 union_preview
+        'preview_field': 'union_preview',
         'full_count_field': 'union_full_count',
         'count_returns_list': True,
     },
@@ -97,36 +97,6 @@ def _make_protocol_extras(group, username, spec):
         result_count = int(result) if result is not None else 0
         preview_data = [{'value': str(result_count), 'original': str(result_count)}]
 
-    # 2026-07-30 Friday fix (Bug 3):前端 line 402-403 读 result_preview[i].original/.value,
-    # 但 read_intersection_from_file 返回 int list (如 [13810000001, ...]) 不是 dict list。
-    # 需要 reverse_map 把 uint64 → 原始 token。
-    # 交集里的每个 uint64 都在我自己的 uploads.numbers 里出现过(因为我自己的 numbers 、
-    # 对方的 numbers、双方交集合并;交集数字 ＝ 双侧都 hash 后的同值)，
-    # 所以自己的 reverse_map 能覆盖交集所有项的“原始 token”。
-    if cfg['count_returns_list'] and isinstance(result, list):
-        rev_nums = []
-        rev_origs = []
-        for u in (group.get('uploads') or []):
-            if u.get('username') == username:
-                rev_nums = [str(n) for n in u.get('numbers', [])]
-                rev_origs = u.get('original_items', [])
-                break
-        # reverse_map: str(numbers[i]) → original_items[i]
-        rev_map = dict(zip(rev_nums, rev_origs))
-        preview_data = []
-        for x in result[:20]:
-            try:
-                x_int = int(x)
-                x_str = str(x_int)
-            except (ValueError, TypeError):
-                # 2026-07-30 防御: result 里可能有非数字行 (eg. padding sentinel 遗漏)
-                # 跳过,不解码
-                continue
-            preview_data.append({
-                'value': x_str,
-                'original': rev_map.get(x_str, x_str),  # 本侧映射不到就显示数字本身
-            })
-
     result_path = os.path.join(kunlun_dir, cfg['result_filename'])
     completed = os.path.exists(result_path)
 
@@ -135,21 +105,8 @@ def _make_protocol_extras(group, username, spec):
     original_preview, original_full = _read_first_n(
         os.path.join(kunlun_dir, f"original_{role}.txt"))
 
-    # SPIKE 5 (2026-07-30 Friday demo): sPSO runner 现在 dump OPRF prf_vals 到
-    # oprf_prf_sender.txt (PSO sender = OprfRecver) / oprf_prf_recver.txt (PSO recver = OprfSender).
-    # 我们按当前用户的 role 选:
-    #   - PSO sender 跑 OprfRecver.eval → oprf_prf_sender.txt
-    #   - PSO receiver 跑 OprfSender.eval → oprf_prf_recver.txt
-    # ALICE = PSO sender (proto 里的 'receiver' 角色), BOB = PSO receiver (proto 里的 'sender' 角色)
-    if not ciphertext_preview:
-        oprf_filename = 'oprf_prf_sender.txt' if role == 'receiver' else 'oprf_prf_recver.txt'
-        oprf_preview, oprf_full = _read_first_n(
-            os.path.join(kunlun_dir, oprf_filename))
-        if oprf_preview:
-            ciphertext_preview = oprf_preview
-            ciphertext_full = oprf_full
-
-    # 第二次 fallback: 仍没就退化到 group.uploads 里的 numbers(标准 hash 后的 uint64)
+    # 2026-07-30 Friday: sPSO runner 不写 ciphertext 中间文件,fallback 到 group.uploads
+    # 里自己的 numbers(被 hash 后的 uint64 串,反正都算是"加密形态")
     if not ciphertext_preview:
         for u in (group.get('uploads') or []):
             if u.get('username') == username and u.get('numbers'):
@@ -360,10 +317,6 @@ def _make_get_group_handler(spec: ProtocolSpec):
 
             return jsonify(response_data)
         except Exception as e:
-            import traceback
-            with open('/tmp/flask_get_err.log', 'a') as _f:
-                _f.write(f"\n=== {spec.protocol_id} GET {group_id} ===\n")
-                _f.write(traceback.format_exc())
             return jsonify({'error': f'获取小组失败:{str(e)}'}), 500
     return _auth_required(spec, handler)
 
@@ -409,7 +362,7 @@ def _psi_sum_get_extras(group, username):
         read_sum_from_file,
     )
     group_id = group['id']
-    kunlun_dir = os.path.join(Config.SPSO_PSI_SUM_DATA_DIR, f"group_{group_id}")
+    kunlun_dir = os.path.join(Config.KUNLUN_PSI_SUM_DATA_DIR, f"group_{group_id}")
     role = 'receiver' if username == group['creator'] else 'sender'
 
     def _read_first_n(path, n=20):
@@ -475,7 +428,7 @@ def _register_protocol(app, spec: ProtocolSpec):
     app.add_url_rule(f'{prefix}/upload', f'{spec.protocol_id}_upload',
                      _make_upload_handler(spec), methods=['POST'])
 
-    app.add_url_rule(f'/api/my-{spec.url_prefix.rsplit("/",1)[-1].replace("-groups","").replace("-group","")}-groups',
+    app.add_url_rule(f'/api/my-{spec.protocol_id.replace("_", "-")}-groups',
                      f'my_{spec.protocol_id}_groups',
                      _make_my_groups_handler(spec), methods=['GET'])
 
@@ -615,31 +568,13 @@ def _generic_upload_handler(spec: ProtocolSpec):
                 'message': f'探测完成,发现 {len(probe_paths)} 个潜在字段路径'
             })
 
-        # PSI-Sum: 解析 token + value
-        # 2026-07-31 Friday: 统一两种上传格式
-        #   模式 A (新, 优先): 单个文件, 每行 `token,value` (value 可选, 没逗号则 value=0)
-        #     - receiver (creator) 端的 value 会被 add_upload 忽略 (协议设计: 只有 sender 提供 value)
-        #   模式 B (兼容旧 UI): 两个文件 (主 file + valueFile)
-        #   模式 C (兼容老 form): form 'values' 字段 (逗号分隔整数)
+        # PSI-Sum: 读 values 字段
         values = None
-        values_from_main = False  # 标记: 主 file 解析后负责拆 values
         if spec.protocol_id == 'psi_sum':
-            values_from_main = True  # 默认主 file 含 value
-            if 'valueFile' in request.files:
-                vf = request.files['valueFile']
-                if vf.filename != '':
-                    vf_content = vf.read().decode('utf-8')
-                    values = [v.strip() for v in vf_content.replace(',', '\n').split('\n') if v.strip()]
-                    try:
-                        values = [int(v) for v in values]
-                    except ValueError:
-                        return jsonify({'error': 'value 文件必须全是整数(逗号分隔)'}), 400
-                    values_from_main = False
-            elif request.form.get('values', '').strip():
-                values_raw = request.form.get('values', '').strip()
+            values_raw = request.form.get('values', '').strip()
+            if values_raw:
                 try:
                     values = [int(v.strip()) for v in values_raw.split(',') if v.strip()]
-                    values_from_main = False
                 except ValueError as e:
                     return jsonify({'error': f'values 字段解析失败(需逗号分隔整数):{str(e)}'}), 400
 
@@ -665,24 +600,12 @@ def _generic_upload_handler(spec: ProtocolSpec):
             else:
                 json_path = group.get('json_path')
                 if not json_path:
-                    # 2026-07-30 修复: 兼容 receiver 探测 0 paths 的场景
-                    # (eg. 纯 token 数组 ["a","b"],后端探测返回 paths=[] → 触发 alert "由后端默认提取"
-                    # → 实际上 _parse_json_items 走"档 1a" 自动模式能成功,但 group.json_path 未被写入)
-                    # sender 不再 400,改为走自动模式 (None → _parse_json_items 自动 fallback)
-                    json_path = None
+                    return jsonify({'error': '请等组长(receiver)上传并选择 JSON path'}), 400
         else:
             json_path = None
 
         try:
-            # 2026-07-31 Friday: PSI-Sum 走专用 parser (CSV `token,value`), 其他协议走 extract_items_from_file
-            if spec.protocol_id == 'psi_sum' and values_from_main:
-                # PSI-Sum 单文件 CSV mode: parse_csv_with_values
-                from .psi_sum import PSISumGroupManager
-                items, original_items, parsed_values = PSISumGroupManager.parse_csv_with_values(content, mode)
-                if not values:
-                    values = parsed_values  # 仅当用户没传独立 valueFile 时, 用主 file 解析的 values
-            else:
-                items, original_items = extract_items_from_file(content, file.filename, mode, path=json_path)
+            items, original_items = extract_items_from_file(content, file.filename, mode, path=json_path)
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
 
@@ -870,22 +793,6 @@ def _make_start_computation_handler(spec: ProtocolSpec):
                 response['sum'] = result.get('sum', 0)
                 response['sum_str'] = result.get('sum_str', '0')
             elif spec.protocol_id == 'ss_psi':
-                # SPIKE 6 Option A: SS-PSI 存 share_sender/share_receiver 到 group['result']
-                # 之前只 update response 不存 group,导致 GET group 后前端 downloadResult 拿不到
-                # share 文件。注意:share 是双方各持一份,XOR 才是交集(隐私设计,无明文交集暴露)
-                data_for_save = spec.manager_cls.load_groups()
-                for _g in data_for_save['groups']:
-                    if _g['id'] == group_id:
-                        _g['result'] = {
-                            'share_sender': result.get('share_sender', []),
-                            'share_receiver': result.get('share_receiver', []),
-                            'cardinality_hint': result.get('cardinality_hint', 0),
-                            'cuckoo_size': result.get('cuckoo_size', 0),
-                            'computed_at': result.get('computed_at'),
-                            'computed_by': result.get('computed_by'),
-                        }
-                        break
-                spec.manager_cls.save_groups(data_for_save)
                 response.update(result)
             return jsonify(response), 200
         except Exception as e:
@@ -927,9 +834,7 @@ def _make_history_handler(spec: ProtocolSpec):
             history = spec.manager_cls.get_history(group_id, username)
             if history is None:
                 return jsonify({'error': '该协议不支持多轮历史'}), 400
-            # 2026-07-30 fix: 前端 4 处 loadHistory 都读 result.data.rounds
-            # 之前返 'history' 字段,前端拿不到,一直显示"暂无历史记录"
-            return jsonify({'success': True, 'rounds': history, 'history': history})
+            return jsonify({'success': True, 'history': history})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return _auth_required(spec, handler)

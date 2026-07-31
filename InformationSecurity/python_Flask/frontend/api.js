@@ -9,6 +9,8 @@ async function request(endpoint, options = {}) {
         headers: {
             "Content-Type": "application/json",
         },
+        // 2026-07-30 Friday fix: 加 8 秒超时避免 Chrome 同源 6 连接排队超过 30 秒后报 ERR_CONNECTION_TIMED_OUT
+        signal: AbortSignal.timeout(8000),
     };
 
     // 如果有 token，添加到请求头
@@ -647,15 +649,13 @@ async function apiGetMyPSISumGroups() {
 
 // 上传 PSI-Sum 文件 (set 可选带 valueFile)
 // valueFile: 可选 File 对象，与 set 行数必须一致
-async function apiPSISumUpload(groupId, file, valueFile = null) {
+async function apiPSISumUpload(groupId, file) {
+    // 2026-07-31 Friday: 单文件 CSV (token,value), 不再传 valueFile
     const token = sessionStorage.getItem("token");
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("groupId", groupId);
-    if (valueFile) {
-        formData.append("valueFile", valueFile);
-    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/psi-sum-group/upload`, {
@@ -696,6 +696,71 @@ async function apiGetPSISumGroupHistory(groupId) {
     return await request(`/psi-sum-group/${groupId}/history`, {
         method: "GET",
     });
+}
+
+// 2026-07-30 Friday: 补 SS-PSI API 函数(之前 mock IIFE 调用了不存在的函数)
+// SS-PSI 后端接口前缀: /api/ss-psi-groups (复数,与其他协议不一致)
+async function apiCreateSSPSIGroup(name) {
+    return await request("/ss-psi-groups/create", {
+        method: "POST",
+        body: JSON.stringify({ name }),
+    });
+}
+
+async function apiJoinSSPSIGroup(groupId) {
+    return await request("/ss-psi-groups/join", {
+        method: "POST",
+        body: JSON.stringify({ groupId }),
+    });
+}
+
+async function apiGetSSPSIGroup(groupId) {
+    return await request(`/ss-psi-groups/${groupId}`, { method: "GET" });
+}
+
+async function apiGetMySSPSIGroups() {
+    return await request("/my-ss-psi-groups", { method: "GET" });
+}
+
+// 2026-07-31 哥要历史记录 UI,补 history + download API
+async function apiGetSSPSIGroupHistory(groupId) {
+    return await request(`/ss-psi-groups/${groupId}/history`, { method: "GET" });
+}
+
+// 下载某 round 的归档文件
+// fileType: my_share | my_plaintext | result_cardinality (SS-PSI 当前只支持 my_share + my_plaintext)
+function apiDownloadSSPSIRoundFile(groupId, roundNum, fileType) {
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+        alert('未登录,请重新登录');
+        return;
+    }
+    const url = `/api/ss-psi-groups/${groupId}/round/${roundNum}/download?file_type=${fileType}`;
+    fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(async response => {
+        if (!response.ok) {
+            const text = await response.text();
+            let msg = '下载失败';
+            try {
+                const d = JSON.parse(text);
+                msg = d.error || msg;
+            } catch(e) {}
+            throw new Error(msg + ' (HTTP ' + response.status + ')');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        // 文件名按 file_type 后缀
+        const ext = fileType === 'my_plaintext' ? '_plaintext.txt' : '_share.txt';
+        a.download = `ss_psi_round${roundNum}${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    })
+    .catch(err => alert('下载失败: ' + err.message));
 }
 
 // 下载某 round 的归档文件

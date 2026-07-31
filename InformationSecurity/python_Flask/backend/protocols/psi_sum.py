@@ -1,9 +1,8 @@
 # protocols/psi_sum.py — PSI-Sum 协议
 import os
 from datetime import datetime
-from app import Config
-from .base import BaseGroupManager, KunlunRunner
-
+from app import Config, _standardize_token
+from .base import BaseGroupManager, BaseRunner
 
 class PSISumGroupManager(BaseGroupManager):
     file_path = Config.PSI_SUM_GROUPS_FILE
@@ -12,7 +11,7 @@ class PSISumGroupManager(BaseGroupManager):
 
     supports_history = True
     result_field = 'sum_result'
-    data_dir_attr = 'KUNLUN_PSI_SUM_DATA_DIR'
+    data_dir_attr = 'SPSO_PSI_SUM_DATA_DIR'
 
     archive_filenames = (
         'receiver.txt', 'sender.txt',
@@ -42,16 +41,64 @@ class PSISumGroupManager(BaseGroupManager):
     # === PSI-Sum 特有的 4 个 hook ===
 
     @classmethod
+
+    # === PSI-Sum 专用 parser (2026-07-31) ===
+    # 区别于 extract_items_from_file 的 re.findall(r'[^\s,;\n]+', content)
+    # (会把 `alice,100` 拆成两个 token ['alice', '100'])
+    # 这里手动按行解析,每行可选 `token,value` (value 为整数, 可选)
+    @staticmethod
+    def parse_csv_with_values(content, mode='auto'):
+        """PSI-Sum CSV 解析:返回 (items, original_items, values)
+        - items: standardized token list (走 _standardize_token)
+        - original_items: 原始 token list (跟 items 一一对应)
+        - values: int list (跟 items 一一对应, value 缺失 → 0)
+        """
+        items = []
+        original_items = []
+        values = []
+        for line in content.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(',', 1)
+            token_raw = parts[0].strip()
+            value_raw = parts[1].strip() if len(parts) > 1 else ''
+            if not token_raw:
+                continue
+            std = _standardize_token(token_raw, mode)
+            if std is None:
+                continue
+            try:
+                v = int(value_raw) if value_raw else 0
+            except ValueError:
+                try:
+                    v = int(float(value_raw))
+                except ValueError:
+                    raise ValueError(f"value 必须为整数: '{value_raw}' (token='{token_raw}')")
+            items.append(std)
+            original_items.append(token_raw)
+            values.append(v)
+        return items, original_items, values
+
+    @classmethod
     def add_upload(cls, group_id, username, items, **kwargs):
-        """PSI-Sum: items + values,必须等长"""
+        """PSI-Sum: items + values,必须等长
+        2026-07-31: receiver (creator) 端的 value 被强制忽略 (协议设计: 只有 sender 提供 value)
+        """
         values = kwargs.get('values')
-        if values is not None and len(values) != len(items):
-            return False, f"value 数量 ({len(values)}) 必须与 set 元素数量 ({len(items)}) 一致"
         data = cls.load_groups()
         for group in data["groups"]:
             if group["id"] == group_id:
                 if username not in group["members"]:
                     return False, "你不是该小组成员"
+                is_receiver = (username == group['creator'])
+                if is_receiver:
+                    # receiver 端 value 强制忽略 (Kunlun PSI-Sum 协议只读 sender value)
+                    values = None
+                else:
+                    # sender 端必须有 value
+                    if values is not None and len(values) != len(items):
+                        return False, f"value 数量 ({len(values)}) 必须与 set 元素数量 ({len(items)}) 一致"
                 group["uploads"] = [u for u in group["uploads"] if u["username"] != username]
                 group["uploads"].append({
                     'username': username,
@@ -100,20 +147,3 @@ class PSISumGroupManager(BaseGroupManager):
                 return True
         return False
 
-
-class KunlunPSISum(KunlunRunner):
-    receiver_exec = 'my_mqrpmt_psi_sum_receiver'
-    sender_exec = 'my_mqrpmt_psi_sum_sender'
-    data_dir_attr = 'KUNLUN_PSI_SUM_DATA_DIR'
-    result_filenames = ('cardinality.txt', 'sum.txt')   # ★ 2 个结果文件
-    log_tag = 'Kunlun-PSISum'
-    spawn_order = 'sender_first'   # ★ PSI-Sum 反调度
-
-    @classmethod
-    def parse_result(cls, cardinality_txt='', sum_txt='', **kwargs):
-        sum_str = sum_txt.strip()
-        return {
-            'cardinality': int(cardinality_txt.strip() or 0),
-            'sum': int(sum_str) if sum_str.lstrip('-').isdigit() else 0,
-            'sum_str': sum_str,
-        }
