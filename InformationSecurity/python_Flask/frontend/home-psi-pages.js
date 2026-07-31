@@ -1088,15 +1088,16 @@ async function loadMyPSIMatchGroups() {
 
             groups.forEach(group => {
                 const li = document.createElement("li");
-                li.className = "group-item";
+                // 2026-07-31 Friday: 跟 PSI_INT 对齐, class 统一用 psi-group-* 前缀
+                li.className = "psi-group-item";
                 li.dataset.groupId = group.id;
                 if (currentPSIMatchGroupId === group.id) {
                     li.classList.add("active");
                 }
                 li.innerHTML = `
-                    <div class="group-name">${escapeHtml(group.name)}</div>
-                    <div class="group-id">ID: ${group.id}</div>
-                    <div class="group-meta">
+                    <div class="psi-group-name">${escapeHtml(group.name)}</div>
+                    <div class="psi-group-id">ID: ${group.id}</div>
+                    <div class="psi-group-meta">
                         <span>🔒 ${group.member_count}人</span>
                         ${group.creator === sessionStorage.getItem("username") ? '<span style="margin-left:10px;color:#92400e">👑 组长</span>' : ''}
                     </div>
@@ -2879,6 +2880,9 @@ window.PSI_SUM = (function() {
         if (detail.cardinality_result !== null && detail.cardinality_result !== undefined) {
             renderResult(detail);
         }
+
+        // 2026-07-31 Friday: 刷新历史记录 tab (跟 PSI_INT 对齐, polling 后自动显示历史 tab)
+        loadPsiSumHistory();
     }
 
     function renderPreview(detail, username) {
@@ -2929,13 +2933,23 @@ window.PSI_SUM = (function() {
             startBtn.disabled = true;
             startBtn.textContent = '✓ 已完成';
         }
-        // 保存按钮(creator/receiver + 有结果)
+        // 保存按钮(creator/receiver + 有结果 + 双方都已上传) — 跟 PSI_INT 对齐
+        // 2026-07-31 Friday fix: renderResult 是 renderFromDetail 的 sibling function (不是嵌套),
+        // username 不能作为闭包变量访问, 从 sessionStorage 重取
         const saveBtn = $('psiSumSaveRoundBtn');
         const saveHint = $('psiSumSaveRoundHint');
         if (saveBtn && saveHint) {
+            const username = sessionStorage.getItem('username');
             const isCreator = detail.group && detail.group.creator === username;
-            if (isCreator) { show(saveBtn); show(saveHint); }
-            else { hide(saveBtn); hide(saveHint); }
+            const hasResult = detail.cardinality_result !== null && detail.cardinality_result !== undefined;
+            const bothUploaded = (detail.group && (detail.group.uploads || []).length) >= 2;
+            if (isCreator && hasResult && bothUploaded) {
+                show(saveBtn); hide(saveHint);
+            } else if (!isCreator) {
+                hide(saveBtn); show(saveHint);
+            } else {
+                hide(saveBtn); hide(saveHint);
+            }
         }
     }
 
@@ -3432,9 +3446,20 @@ window.SS_PSI = (function() {
             else ssStartBtn.classList.add('hidden');
         }
         const ssSaveRoundBtn = document.getElementById('ssPsiSaveRoundBtn');
+        const ssSaveRoundHint = document.getElementById('ssPsiSaveRoundHint');
         if (ssSaveRoundBtn) {
-            if (g.result && isCreator) ssSaveRoundBtn.classList.remove('hidden');
-            else ssSaveRoundBtn.classList.add('hidden');
+            // 2026-07-31 Friday: 跟 PSI_INT 对齐 (creator=receiver + 有结果 + 双方都上传)
+            const allUploaded = g.uploads && g.uploads.length >= 2;
+            if (isCreator && g.result && allUploaded) {
+                ssSaveRoundBtn.classList.remove('hidden');
+                if (ssSaveRoundHint) ssSaveRoundHint.classList.add('hidden');
+            } else if (!isCreator) {
+                ssSaveRoundBtn.classList.add('hidden');
+                if (ssSaveRoundHint) ssSaveRoundHint.classList.remove('hidden');
+            } else {
+                ssSaveRoundBtn.classList.add('hidden');
+                if (ssSaveRoundHint) ssSaveRoundHint.classList.add('hidden');
+            }
         }
         const remainText = g.members.length < totalParties
             ? `⏳ 等待其他参与方加入 (${g.members.length}/${totalParties})...`

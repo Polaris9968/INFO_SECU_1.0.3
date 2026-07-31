@@ -3722,11 +3722,7 @@ body > .sidebar {
 
                 <div class="card">
                     <h2>我的匹配小组</h2>
-                    <div class="auto-refresh" style="margin-bottom: 10px;">
-                        <div class="refresh-dot"></div>
-                        <span>自动刷新中</span>
-                    </div>
-                    <ul class="group-list" id="myPSIMatchGroupList">
+                    <ul class="psi-group-list" id="myPSIMatchGroupList">
                         <li class="empty-state">加载中...</li>
                     </ul>
                 </div>
@@ -4320,7 +4316,6 @@ body > .sidebar {
                     <h2>▶ 触发运算</h2>
                     <p style="color: #666; margin-bottom: 10px;">双方均已上传后，组长可手动触发秘密共享交集（receiver 身份才能看到按钮）</p>
                     <button class="btn btn-success hidden" id="ssPsiStartBtn" onclick="SS_PSI.start()" style="margin-top: 10px;">▶ 开始秘密共享交集</button>
-                            <button class="save-round-btn hidden" id="ssPsiSaveRoundBtn" onclick="SS_PSI.saveAndStartNewRound()" style="margin-left:10px;">💾 保存当前结果,开始下一轮</button>
                 </div>
 
                 <div class="card" id="ssPsiResultCard">
@@ -4362,6 +4357,9 @@ body > .sidebar {
                     <h2>⚙️ 操作</h2>
                     <div class="action-buttons">
                         <button class="btn btn-danger hidden" id="ssPsiDeleteGroupBtn" onclick="SS_PSI.deleteGroup()">🗑 解散小组</button>
+                        <!-- 2026-07-31 Friday: save-round-btn 跟 PSI_INT 对齐, 移到操作卡 -->
+                        <button class="save-round-btn hidden" id="ssPsiSaveRoundBtn" onclick="SS_PSI.saveAndStartNewRound()">💾 保存当前结果,开始下一轮</button>
+                        <span class="save-round-hint hidden" id="ssPsiSaveRoundHint">(只有 receiver 可以保存)</span>
                     </div>
                 </div>
 
