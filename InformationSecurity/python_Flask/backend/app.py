@@ -459,7 +459,7 @@ def calculate_statistics(numbers):
 
 def read_intersection_from_file(group_id):
     """从 intersection.txt 读取交集结果"""
-    psi_data_dir = Config.KUNLUN_PSI_DATA_DIR
+    psi_data_dir = Config.SPSO_PSI_DATA_DIR
     group_dir = os.path.join(psi_data_dir, f"group_{group_id}")
     result_file = os.path.join(group_dir, "intersection.txt")
 
@@ -493,7 +493,7 @@ def read_intersection_from_file(group_id):
 
 def read_cardinality_from_file(group_id):
     """从 cardinality.txt 读取交集基数"""
-    result_file = os.path.join(Config.KUNLUN_PSI_CARD_DATA_DIR, f"group_{group_id}", "cardinality.txt")
+    result_file = os.path.join(Config.SPSO_PSI_CARD_DATA_DIR, f"group_{group_id}", "cardinality.txt")
 
     if not os.path.exists(result_file):
         return None
@@ -509,7 +509,7 @@ def read_cardinality_from_file(group_id):
 
 def read_sum_from_file(group_id):
     """从 PSI-Sum group_dir / sum.txt 读取关联求和值(以字符串返回，避免 BigInt 转 Number 丢精度)"""
-    result_file = os.path.join(Config.KUNLUN_PSI_SUM_DATA_DIR, f"group_{group_id}", "sum.txt")
+    result_file = os.path.join(Config.SPSO_PSI_SUM_DATA_DIR, f"group_{group_id}", "sum.txt")
     if not os.path.exists(result_file):
         return None
     with open(result_file, 'r', encoding='latin-1') as f:
@@ -518,7 +518,7 @@ def read_sum_from_file(group_id):
 
 def read_psi_sum_cardinality_from_file(group_id):
     """从 PSI-Sum group_dir / cardinality.txt 读取交集基数(由 receiver 写)"""
-    result_file = os.path.join(Config.KUNLUN_PSI_SUM_DATA_DIR, f"group_{group_id}", "cardinality.txt")
+    result_file = os.path.join(Config.SPSO_PSI_SUM_DATA_DIR, f"group_{group_id}", "cardinality.txt")
     if not os.path.exists(result_file):
         return None
     with open(result_file, 'r', encoding='latin-1') as f:
@@ -531,7 +531,7 @@ def read_psi_sum_cardinality_from_file(group_id):
 
 def read_union_from_file(group_id):
     """从 union.txt 读取并集结果"""
-    result_file = os.path.join(Config.KUNLUN_PSI_UNION_DATA_DIR, f"group_{group_id}", "union.txt")
+    result_file = os.path.join(Config.SPSO_PSI_UNION_DATA_DIR, f"group_{group_id}", "union.txt")
 
     if not os.path.exists(result_file):
         return []
