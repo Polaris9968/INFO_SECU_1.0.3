@@ -615,11 +615,16 @@ def _generic_upload_handler(spec: ProtocolSpec):
                 'message': f'探测完成,发现 {len(probe_paths)} 个潜在字段路径'
             })
 
-        # PSI-Sum: 读 values 字段
+        # PSI-Sum: 解析 token + value
+        # 2026-07-31 Friday: 统一两种上传格式
+        #   模式 A (新, 优先): 单个文件, 每行 `token,value` (value 可选, 没逗号则 value=0)
+        #     - receiver (creator) 端的 value 会被 add_upload 忽略 (协议设计: 只有 sender 提供 value)
+        #   模式 B (兼容旧 UI): 两个文件 (主 file + valueFile)
+        #   模式 C (兼容老 form): form 'values' 字段 (逗号分隔整数)
         values = None
+        values_from_main = False  # 标记: 主 file 解析后负责拆 values
         if spec.protocol_id == 'psi_sum':
-            # 2026-07-30 Friday fix: 前端用 formData.append('valueFile', file) 传文件
-            # 后端必须从文件读,不能只读 form 'values' 字段（逗号分隔）
+            values_from_main = True  # 默认主 file 含 value
             if 'valueFile' in request.files:
                 vf = request.files['valueFile']
                 if vf.filename != '':
@@ -628,14 +633,15 @@ def _generic_upload_handler(spec: ProtocolSpec):
                     try:
                         values = [int(v) for v in values]
                     except ValueError:
-                        return jsonify({'error': 'value 文件必须全是整数(逗号/换行分隔)'}), 400
-            else:
+                        return jsonify({'error': 'value 文件必须全是整数(逗号分隔)'}), 400
+                    values_from_main = False
+            elif request.form.get('values', '').strip():
                 values_raw = request.form.get('values', '').strip()
-                if values_raw:
-                    try:
-                        values = [int(v.strip()) for v in values_raw.split(',') if v.strip()]
-                    except ValueError as e:
-                        return jsonify({'error': f'values 字段解析失败(需逗号分隔整数):{str(e)}'}), 400
+                try:
+                    values = [int(v.strip()) for v in values_raw.split(',') if v.strip()]
+                    values_from_main = False
+                except ValueError as e:
+                    return jsonify({'error': f'values 字段解析失败(需逗号分隔整数):{str(e)}'}), 400
 
         content = file.read().decode('utf-8')
         mode = group.get('standardize_mode', 'auto')
@@ -668,7 +674,15 @@ def _generic_upload_handler(spec: ProtocolSpec):
             json_path = None
 
         try:
-            items, original_items = extract_items_from_file(content, file.filename, mode, path=json_path)
+            # 2026-07-31 Friday: PSI-Sum 走专用 parser (CSV `token,value`), 其他协议走 extract_items_from_file
+            if spec.protocol_id == 'psi_sum' and values_from_main:
+                # PSI-Sum 单文件 CSV mode: parse_csv_with_values
+                from .psi_sum import PSISumGroupManager
+                items, original_items, parsed_values = PSISumGroupManager.parse_csv_with_values(content, mode)
+                if not values:
+                    values = parsed_values  # 仅当用户没传独立 valueFile 时, 用主 file 解析的 values
+            else:
+                items, original_items = extract_items_from_file(content, file.filename, mode, path=json_path)
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
 

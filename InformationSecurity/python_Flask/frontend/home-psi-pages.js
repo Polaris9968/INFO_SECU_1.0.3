@@ -2698,7 +2698,6 @@ window.PSI_SUM = (function() {
         const progressFill = $('psiSumProgressFill'); if (progressFill) progressFill.style.width = '0%';
         const uploadStatus = $('psiSumUploadStatus'); if (uploadStatus) uploadStatus.textContent = '';
         const setInput = $('psiSumFile'); if (setInput) setInput.value = '';
-        const valInput = $('psiSumValueFile'); if (valInput) valInput.value = '';
         // 隐藏所有结果相关卡
         ['psiSumStartCard', 'psiSumPreviewCard', 'psiSumResultCard'].forEach(i => {
             const el = $(i); if (el) el.style.display = 'none';
@@ -2883,24 +2882,25 @@ window.PSI_SUM = (function() {
     }
 
     function renderPreview(detail, username) {
+        // 2026-07-31 Friday: 合并 token+value 单 pre 显示 (CSV `token,value`)
         const previewCard = $('psiSumPreviewCard');
         const origEl = $('psiSumPlaintext');
-        const valEl = $('psiSumValues');
         if (!previewCard || !origEl) return;
         const myOrig = detail.my_original_preview || [];
         const myVal = detail.my_values_preview || [];
         const myOrigFull = detail.my_original_full_count || 0;
-        const myValFull = detail.my_values_full_count || 0;
 
-        if (myOrig.length === 0 && myVal.length === 0) {
+        if (myOrig.length === 0) {
             previewCard.style.display = 'none';
             return;
         }
         previewCard.style.display = 'block';
-        origEl.textContent = myOrig.length ? myOrig.join('\n') + (myOrigFull > 20 ? `\n... (共 ${myOrigFull} 项, 仅显示前 20)` : '') : '(未上传集合)';
-        if (valEl) {
-            valEl.textContent = myVal.length ? myVal.join('\n') + (myValFull > 20 ? `\n... (共 ${myValFull} 项, 仅显示前 20)` : '') : '(未传 value)';
-        }
+        // 合并显示 token,value (receiver 端 myVal 为空, 因为 value 被忽略)
+        const lines = myOrig.map((tok, i) => {
+            const v = myVal[i];
+            return v !== undefined && v !== null ? `${tok},${v}` : tok;
+        });
+        origEl.textContent = lines.join('\n') + (myOrigFull > 20 ? `\n... (共 ${myOrigFull} 项, 仅显示前 20)` : '');
     }
 
     function renderResult(detail) {
@@ -2940,29 +2940,25 @@ window.PSI_SUM = (function() {
     }
 
     // 2026-07-08:文件选择 callback(配合 upload-area 风格)
-    function handleSetFileSelected(inputEl) {
-        if (!inputEl || !inputEl.files[0]) return;
-        const textEl = inputEl.parentElement.querySelector('.upload-text');
-        if (textEl) textEl.textContent = '✓ 已选择: ' + inputEl.files[0].name;
-    }
-    function handleValueFileSelected(inputEl) {
+    // 2026-07-31 Friday: 合并 handleSetFileSelected + handleValueFileSelected → handleFileSelected
+    function handleFileSelected(inputEl) {
         if (!inputEl || !inputEl.files[0]) return;
         const textEl = inputEl.parentElement.querySelector('.upload-text');
         if (textEl) textEl.textContent = '✓ 已选择: ' + inputEl.files[0].name;
     }
 
     async function uploadFile() {
+        // 2026-07-31 Friday: 单文件上传 (token,value CSV)
+        // 之前是 2 个文件 (set + value), 现在统一为 1 个文件, 格式 `token,value` (value 可选)
         const setInput = $('psiSumFile');
-        const valInput = $('psiSumValueFile');
         const setFile = setInput && setInput.files[0];
-        const valFile = valInput && valInput.files[0];
-        if (!setFile) { alert('请选择集合文件'); return; }
+        if (!setFile) { alert('请选择文件 (token,value 每行)'); return; }
         if (!currentGroupId) { alert('小组未加载'); return; }
         const statusEl = $('psiSumUploadStatus');
         statusEl.textContent = '⏳ 上传中...';
         statusEl.style.color = '#666';
         try {
-            const result = await apiPSISumUpload(currentGroupId, setFile, valFile);
+            const result = await apiPSISumUpload(currentGroupId, setFile);
             if (result.success) {
                 const d = result.data;
                 statusEl.style.color = '#5a8a3a';
@@ -3177,8 +3173,7 @@ window.PSI_SUM = (function() {
         loadPsiSumHistory,
         saveAndStartNewRound,
         downloadRoundFile,
-        handleSetFileSelected,
-        handleValueFileSelected,
+        handleFileSelected,
         _loadMyGroups: loadMyGroups,
         stop: stopPolling
     };

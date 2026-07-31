@@ -649,15 +649,13 @@ async function apiGetMyPSISumGroups() {
 
 // 上传 PSI-Sum 文件 (set 可选带 valueFile)
 // valueFile: 可选 File 对象，与 set 行数必须一致
-async function apiPSISumUpload(groupId, file, valueFile = null) {
+async function apiPSISumUpload(groupId, file) {
+    // 2026-07-31 Friday: 单文件 CSV (token,value), 不再传 valueFile
     const token = sessionStorage.getItem("token");
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("groupId", groupId);
-    if (valueFile) {
-        formData.append("valueFile", valueFile);
-    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/psi-sum-group/upload`, {

@@ -4147,19 +4147,17 @@ body > .sidebar {
                         <p style="color: #666; margin-bottom: 10px;">集合文件每行一个元素（数字/文本均可），value 文件每行一个整数/小数（与集合行数一致）</p>
                         
                         <div class="form-group">
-                            <label>① 集合文件 <span style="color:#999;">（必填）</span></label>
+                            <label>集合文件 (单文件, 每行 <code>token,value</code>) <span style="color:#999;">（必填）</span></label>
                             <div class="upload-area" onclick="document.getElementById('psiSumFile').click()">
-                                <input type="file" id="psiSumFile" accept=".txt,.csv" onchange="PSI_SUM.handleSetFileSelected(this)">
+                                <input type="file" id="psiSumFile" accept=".txt,.csv" onchange="PSI_SUM.handleFileSelected(this)">
                                 <div class="upload-icon">📄</div>
-                                <div class="upload-text">点击选择集合文件(.txt / .csv)</div>
+                                <div class="upload-text">点击选择文件 (.txt / .csv)</div>
                             </div>
-                        </div>
-                        <div class="form-group" style="margin-top: 12px;">
-                            <label>② 关联数值文件 <span style="color:#999;">（可选, 推荐提供）</span></label>
-                            <div class="upload-area" onclick="document.getElementById('psiSumValueFile').click()">
-                                <input type="file" id="psiSumValueFile" accept=".txt,.csv" onchange="PSI_SUM.handleValueFileSelected(this)">
-                                <div class="upload-icon">💰</div>
-                                <div class="upload-text">点击选择 value 文件(.txt / .csv)</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 6px;">
+                                格式示例: <code>alice,100</code><br>
+                                - <code>alice,100</code> → token=alice, value=100<br>
+                                - <code>bob</code> → token=bob, value=0 (默认)<br>
+                                - Receiver (组长) 端的 value <strong>会被忽略</strong>(只有 sender 提供 value, 隐私设计)
                             </div>
                         </div>
                         <button class="btn btn-primary" id="psiSumUploadBtn" onclick="PSI_SUM.uploadFile()" style="margin-top: 15px;" disabled>📤 上传</button>
@@ -4177,13 +4175,9 @@ body > .sidebar {
                     <!-- 预览卡(上传或运算后显示) -->
                     <div class="card" id="psiSumPreviewCard" style="display:none;">
                         <h2>📄 预览（前 20 项）</h2>
+                        <p style="font-size: 12px; color: #666;">格式: <code>token,value</code> (value 可选)</p>
                         <div class="result-container">
-                            <h3>📄 集合明文</h3>
                             <pre id="psiSumPlaintext">等待上传后显示...</pre>
-                        </div>
-                        <div class="result-container">
-                            <h3>💰 关联数值</h3>
-                            <pre id="psiSumValues">等待上传后显示...</pre>
                         </div>
                     </div>
 
