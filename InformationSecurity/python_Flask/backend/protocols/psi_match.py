@@ -11,7 +11,7 @@ class PSIMatchGroupManager(BaseGroupManager):
 
     supports_history = True
     result_field = 'subset_result'
-    data_dir_attr = 'KUNLUN_PSI_CARD_DATA_DIR'  # PSI-Match 用 PSI-Card 的目录
+    data_dir_attr = 'SPSO_PSI_CARD_DATA_DIR'  # PSI-Match 用 PSI-Card 的目录
 
     archive_filenames = (
         'receiver.txt', 'sender.txt', 'cardinality.txt', 'matched.txt',
@@ -77,7 +77,7 @@ class PSIMatchGroupManager(BaseGroupManager):
 class KunlunPSIMatch(KunlunRunner):
     receiver_exec = 'my_mqrpmt_psi_card_receiver'
     sender_exec = 'my_mqrpmt_psi_card_sender'
-    data_dir_attr = 'KUNLUN_PSI_CARD_DATA_DIR'
+    data_dir_attr = 'SPSO_PSI_CARD_DATA_DIR'
     result_filenames = ('cardinality.txt',)
     log_tag = 'Kunlun-PSIMatch'
 

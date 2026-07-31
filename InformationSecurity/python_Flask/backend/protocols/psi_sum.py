@@ -12,7 +12,7 @@ class PSISumGroupManager(BaseGroupManager):
 
     supports_history = True
     result_field = 'sum_result'
-    data_dir_attr = 'KUNLUN_PSI_SUM_DATA_DIR'
+    data_dir_attr = 'SPSO_PSI_SUM_DATA_DIR'
 
     archive_filenames = (
         'receiver.txt', 'sender.txt',
@@ -153,7 +153,7 @@ class PSISumGroupManager(BaseGroupManager):
 class KunlunPSISum(KunlunRunner):
     receiver_exec = 'my_mqrpmt_psi_sum_receiver'
     sender_exec = 'my_mqrpmt_psi_sum_sender'
-    data_dir_attr = 'KUNLUN_PSI_SUM_DATA_DIR'
+    data_dir_attr = 'SPSO_PSI_SUM_DATA_DIR'
     result_filenames = ('cardinality.txt', 'sum.txt')   # ★ 2 个结果文件
     log_tag = 'Kunlun-PSISum'
     spawn_order = 'sender_first'   # ★ PSI-Sum 反调度

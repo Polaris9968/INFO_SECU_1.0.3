@@ -32,7 +32,7 @@ class SSPSIGroupManager(BaseGroupManager):
 
     supports_history = True  # 2026-07-30 SPIKE 6: 启用多轮(哥反馈缺"下一轮"按钮)
     result_field = 'result'
-    data_dir_attr = 'KUNLUN_SS_PSI_DATA_DIR'
+    data_dir_attr = 'SPSO_SS_PSI_DATA_DIR'
 
     @classmethod
     def _post_finalize_cleanup(cls, group):
@@ -144,7 +144,7 @@ class SpsoSSPSI(KunlunRunner):
     """
     kind = 'sPSO'
     log_tag = 'sPSO-SSPSI'
-    data_dir_attr = 'KUNLUN_SS_PSI_DATA_DIR'
+    data_dir_attr = 'SPSO_SS_PSI_DATA_DIR'
     # 不再有 result_filenames (intersection.txt 已废弃);share 文件固定名
     result_filenames = ('share_sender.txt', 'share_receiver.txt')
 

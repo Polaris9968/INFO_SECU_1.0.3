@@ -218,7 +218,7 @@ class BaseGroupManager:
             if 'rounds' not in group:
                 group['rounds'] = []
 
-            # 协议特定数据目录:用 Config 上的 KUNLUN_xxx_DATA_DIR 属性
+            # 协议特定数据目录:用 Config 上的 SPSO_xxx_DATA_DIR 属性
             data_dir_attr = getattr(cls, 'data_dir_attr', None)
             if data_dir_attr is None:
                 return False, "协议未声明 data_dir_attr"

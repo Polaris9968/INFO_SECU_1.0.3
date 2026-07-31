@@ -10,7 +10,7 @@ class PSIUnionGroupManager(BaseGroupManager):
 
     supports_history = True
     result_field = 'union_result'
-    data_dir_attr = 'KUNLUN_PSI_UNION_DATA_DIR'
+    data_dir_attr = 'SPSO_PSI_UNION_DATA_DIR'
 
     archive_filenames = (
         'receiver.txt', 'sender.txt', 'union.txt',
@@ -56,6 +56,6 @@ class PSIUnionGroupManager(BaseGroupManager):
 class KunlunPSU(KunlunRunner):
     receiver_exec = 'my_mqrpmt_psu_receiver'
     sender_exec = 'my_mqrpmt_psu_sender'
-    data_dir_attr = 'KUNLUN_PSI_UNION_DATA_DIR'
+    data_dir_attr = 'SPSO_PSI_UNION_DATA_DIR'
     result_filenames = ('union.txt',)
     log_tag = 'Kunlun-PSU'

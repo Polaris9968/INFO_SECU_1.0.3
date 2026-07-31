@@ -44,7 +44,7 @@ def _run_spso_mode(group_id, data_dir_attr, spso_mode,
 
     Args:
       group_id: 小组 ID
-      data_dir_attr: Config 上的数据目录属性名(如 'SPSO_PSI_DATA_DIR')
+      data_dir_attr: Config 上的数据目录属性名(如 'KUNLUN_PSI_DATA_DIR')
       spso_mode: 'psi' / 'psu' / 'card' / 'ss_psi'
       output_filename: spso_runner --output-file 参数值(协议特定文件名)
       parse_fn(content: str) -> dict:从输出文件内容生成结果 dict
@@ -82,13 +82,10 @@ def _run_spso_mode(group_id, data_dir_attr, spso_mode,
     try:
         client = SpsoClient(runner_path=SPSO_RUNNER, timeout=600)
         # 调 run_psi_on_input(其内部根据 mode 参数路由)
-        # SPIKE 5 (2026-07-30 Friday demo): dump OPRF 中间产物到 data_dir
-        # 给前端 ciphertext 预览看出“已加密”语义。安全是 demo 妥协。
         result_lines = client.run_psi_on_input(
             input_dir=data_dir,
             output_file=out_path,
             mode=spso_mode,
-            dump_dir=data_dir,
         )
     except subprocess.TimeoutExpired:
         return {'success': False, 'error': 'sPSO 计算超时(>600s)'}
@@ -132,7 +129,7 @@ class SpsoPSI(KunlunRunner):
     """
     receiver_exec = 'spso_runner'   # 兼容 KunlunRunner 字段(实际不用)
     sender_exec = 'spso_runner'     # 兼容 KunlunRunner 字段(实际不用)
-    data_dir_attr = 'SPSO_PSI_DATA_DIR'  # 复用 Kunlun 路径(SPEC 要求)
+    data_dir_attr = 'KUNLUN_PSI_DATA_DIR'  # 复用 Kunlun 路径(SPEC 要求)
     result_filenames = ('intersection.txt',)
     log_tag = 'sPSO-PSI'
 
@@ -168,7 +165,7 @@ class SpsoPSU(KunlunRunner):
     """
     receiver_exec = 'spso_runner'
     sender_exec = 'spso_runner'
-    data_dir_attr = 'SPSO_PSI_UNION_DATA_DIR'
+    data_dir_attr = 'KUNLUN_PSI_UNION_DATA_DIR'
     result_filenames = ('union.txt',)
     log_tag = 'sPSO-PSU'
 
@@ -198,7 +195,7 @@ class SpsoPSICard(KunlunRunner):
     """
     receiver_exec = 'spso_runner'
     sender_exec = 'spso_runner'
-    data_dir_attr = 'SPSO_PSI_CARD_DATA_DIR'
+    data_dir_attr = 'KUNLUN_PSI_CARD_DATA_DIR'
     result_filenames = ('cardinality.txt',)
     log_tag = 'sPSO-PSICard'
 
@@ -247,7 +244,7 @@ class SpsoPSIMatch(KunlunRunner):
     """
     receiver_exec = 'spso_runner'
     sender_exec = 'spso_runner'
-    data_dir_attr = 'SPSO_PSI_CARD_DATA_DIR'   # PSI-Match 复用 PSI-Card 目录
+    data_dir_attr = 'KUNLUN_PSI_CARD_DATA_DIR'   # PSI-Match 复用 PSI-Card 目录
     result_filenames = ('cardinality.txt', 'matched.txt')  # ★ SPIKE 3: 增加 matched.txt
     log_tag = 'sPSO-PSIMatch'
 
@@ -276,7 +273,7 @@ class SpsoPSIMatch(KunlunRunner):
                 from .base import BaseGroupManager
                 # 找 manager_by_data_dir: PSIMatchGroupManager
                 mgr_paths = {
-                    'SPSO_PSI_CARD_DATA_DIR': 'psi_card_groups.json',
+                    'KUNLUN_PSI_CARD_DATA_DIR': 'psi_card_groups.json',
                 }
                 groups_file = mgr_paths.get(data_dir_attr)
                 if groups_file is None:
@@ -357,7 +354,7 @@ class SpsoPSISum(KunlunRunner):
     """
     receiver_exec = 'spso_runner'
     sender_exec = 'spso_runner'
-    data_dir_attr = 'SPSO_PSI_SUM_DATA_DIR'
+    data_dir_attr = 'KUNLUN_PSI_SUM_DATA_DIR'
     result_filenames = ('cardinality.txt', 'sum.txt')
     log_tag = 'sPSO-PSISum'
 

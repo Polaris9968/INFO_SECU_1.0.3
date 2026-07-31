@@ -1,0 +1,118 @@
+# protocols/spso.py — sPSO 协议 wrapper
+"""
+SpsoPSI — sPSO PSI 协议实现(SPIKE 2 集成)。
+
+替代 KunlunRunner 的 PSI 调用,通过 subprocess 启动 spso_runner 二进制。
+数据契约保持兼容(读 receiver.txt / sender.txt,写 intersection.txt),这样
+routes.py 和 app.py 里所有用 read_intersection_from_file / _generic_upload_handler
+的逻辑都不需要改。
+
+设计选择(权衡):
+  - 继承 KunlunRunner 是最干净的方式:所有 spawn/parse 逻辑复用。
+  - override `_run_kunlun` → `run` 直接调 sPSO 即可(避开 spawn 两个进程)。
+  - spso_runner 是单进程(内部 in-process 跑 sender/receiver 两个线程),
+    所以不需要 spawn_order,也不需要 kunlun_build_dir。
+  - log_tag 改成 'sPSO-PSI',其他 metadata 不变。
+"""
+import os
+import time
+import subprocess
+import sys
+
+# Make spso_python importable (sibling of InformationSecurity/)
+_SPSO_PYTHON_DIR = "/root/projects/INFO_SECU_1.0.3/spso_python"
+if _SPSO_PYTHON_DIR not in sys.path:
+    sys.path.insert(0, _SPSO_PYTHON_DIR)
+
+from .base import KunlunRunner
+
+
+SPSO_RUNNER = os.path.join(_SPSO_PYTHON_DIR, "spso_runner")
+
+
+class SpsoPSI(KunlunRunner):
+    """sPSO PSI runner. Replaces KunlunPSI for SPIKE 2 integration.
+
+    与 KunlunRunner 兼容的接口:
+      - run(group_id): 主入口
+      - parse_result(text): 默认按行 split
+
+    关键差异:
+      - 不需要 spawn 两个进程(spso_runner 内部 in-process)
+      - 不需要 cwd=kunlun_build_dir
+      - input_dir / output_file 用 group_id 下的子目录
+    """
+    receiver_exec = 'spso_runner'   # 兼容 KunlunRunner 字段(实际不用)
+    sender_exec = 'spso_runner'     # 兼容 KunlunRunner 字段(实际不用)
+    data_dir_attr = 'KUNLUN_PSI_DATA_DIR'  # 复用 Kunlun 路径(SPEC 要求)
+    result_filenames = ('intersection.txt',)
+    log_tag = 'sPSO-PSI'
+
+    @classmethod
+    def run(cls, group_id):
+        """Run sPSO PSI for the given group_id.
+
+        Assumes {data_dir}/group_{group_id}/receiver.txt and sender.txt exist
+        (written by _generic_upload_handler).
+
+        Returns dict matching KunlunRunner._run_kunlun contract:
+          {'success': True, 'intersection': [...], 'count': N}
+          or {'success': False, 'error': '...'}
+        """
+        # Lazy import to avoid loading spso_client unless needed
+        try:
+            from spso_client import SpsoClient
+        except ImportError as e:
+            return {'success': False, 'error': f'Cannot import spso_client: {e}'}
+
+        from app import Config
+
+        data_dir = os.path.join(getattr(Config, cls.data_dir_attr), f"group_{group_id}")
+        os.makedirs(data_dir, exist_ok=True)
+
+        # 删旧结果文件
+        for fname in cls.result_filenames:
+            p = os.path.join(data_dir, fname)
+            if os.path.exists(p):
+                os.remove(p)
+
+        if not os.path.exists(SPSO_RUNNER):
+            return {'success': False, 'error': f'spso_runner 二进制不存在: {SPSO_RUNNER}'}
+
+        input_dir = data_dir
+        output_file = os.path.join(data_dir, 'intersection.txt')
+
+        receiver_path = os.path.join(input_dir, 'receiver.txt')
+        sender_path = os.path.join(input_dir, 'sender.txt')
+        if not os.path.exists(receiver_path):
+            return {'success': False, 'error': f'receiver.txt 不存在: {receiver_path}'}
+        if not os.path.exists(sender_path):
+            return {'success': False, 'error': f'sender.txt 不存在: {sender_path}'}
+
+        try:
+            client = SpsoClient(runner_path=SPSO_RUNNER, timeout=600)
+            intersection = client.run_psi_on_input(
+                input_dir=input_dir,
+                output_file=output_file,
+                mode='psi',
+            )
+        except subprocess.TimeoutExpired:
+            return {'success': False, 'error': 'sPSO 计算超时(>600s)'}
+        except FileNotFoundError as e:
+            return {'success': False, 'error': str(e)}
+        except Exception as e:
+            err_text = str(e)
+            # Truncate long error messages
+            if len(err_text) > 2000:
+                err_text = err_text[:2000] + "...(truncated)"
+            return {'success': False, 'error': f'sPSO 启动失败: {err_text}'}
+
+        # parse_result (default: read output file by line)
+        try:
+            args = [open(output_file, 'r', encoding='utf-8').read()]
+            parsed = cls.parse_result(*args)
+        except Exception as e:
+            return {'success': False, 'error': f'解析结果失败: {e}'}
+
+        parsed['success'] = True
+        return parsed

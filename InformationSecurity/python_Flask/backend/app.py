@@ -59,16 +59,17 @@ class Config:
 
     STATIC_FOLDER = os.path.join(os.path.dirname(BASE_DIR), 'frontend')
 
-    # ==================== Kunlun 库路径(统一管理)====================
-    # 所有 Kunlun 相关路径都从 KUNLUN_BASE 派生,未来迁移项目只改这里
-    KUNLUN_BASE = "/root/projects/INFO_SECU_1.0.3/Kunlun"
-    KUNLUN_BUILD_DIR = os.path.join(KUNLUN_BASE, "build")
-    KUNLUN_DATA_DIR = os.path.join(KUNLUN_BASE, "PSO_data")
-    KUNLUN_PSI_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_data")
-    KUNLUN_PSI_CARD_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_card_data")
-    KUNLUN_PSI_UNION_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_union_data")
-    KUNLUN_PSI_SUM_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "PSI_sum_data")
-    KUNLUN_SS_PSI_DATA_DIR = os.path.join(KUNLUN_DATA_DIR, "SS_PSI_data")
+    # ==================== sPSO 数据路径(2026-07-31 从 Kunlun 迁移)====================
+    # 历史: 1.0.x 用 Kunlun 库,KUNLUN_BASE 派生 6 个 KUNLUN_xxx_DATA_DIR
+    # 1.0.3 切到 sPSO (2026-07-28 ~ 07-29 SPIKE 2-4),但 data dir 仍在 Kunlun/PSO_data/
+    # 2026-07-31 清理: 改成 SPSO_DATA_DIR 派生, 不再依赖 Kunlun 目录
+    SPSO_DATA_DIR = os.path.join(BASE_DIR, "data", "sPSO_data")
+    SPSO_PSI_DATA_DIR = os.path.join(SPSO_DATA_DIR, "PSI_data")
+    SPSO_PSI_CARD_DATA_DIR = os.path.join(SPSO_DATA_DIR, "PSI_card_data")
+    SPSO_PSI_UNION_DATA_DIR = os.path.join(SPSO_DATA_DIR, "PSI_union_data")
+    SPSO_PSI_SUM_DATA_DIR = os.path.join(SPSO_DATA_DIR, "PSI_sum_data")
+    SPSO_SS_PSI_DATA_DIR = os.path.join(SPSO_DATA_DIR, "SS_PSI_data")
+    # KUNLUN_* 路径保留作 deprecation 过渡 (Phase 3 删), 当前协议已不用
 
     # ==================== 服务器配置 ====================
     HOST = "0.0.0.0"
