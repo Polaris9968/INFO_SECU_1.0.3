@@ -1,0 +1,2 @@
+/usr/bin/ar qc libpbsspmt.a CMakeFiles/pbsspmt.dir/src/oprf.cpp.o CMakeFiles/pbsspmt.dir/src/galois128.cpp.o CMakeFiles/pbsspmt.dir/src/okvsbk.cpp.o CMakeFiles/pbsspmt.dir/src/cuckoo3.cpp.o CMakeFiles/pbsspmt.dir/__/external/2PC_eq_cmp_v2/utils.cpp.o
+/usr/bin/ranlib libpbsspmt.a
