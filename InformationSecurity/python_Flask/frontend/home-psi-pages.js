@@ -3146,7 +3146,6 @@ window.PSI_SUM = (function() {
                         </div>
                     `;
                 }).join('');
-                }).join('');
             }
         } catch (error) {
             console.error('加载 PSI-Sum 历史失败:', error);
