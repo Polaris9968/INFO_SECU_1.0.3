@@ -1289,32 +1289,8 @@ async function refreshCurrentPSIMatchGroup() {
                 document.getElementById("psiMatchDownloadBtn").style.display = 'none';
             }
 
-            // 更新上传记录（依据后端顶层字段 my_upload / other_upload）
-            const recordsDiv = document.getElementById("psiMatchUploadRecords");
+            // 2026-08-01 Friday v1.1.4 Bug #4: 删上传记录卡，但保留 allUploads 计算给 bothUploaded 用
             const allUploads = (myUpload && otherUpload) ? [myUpload, otherUpload] : [];
-            // 保持详情页面里面上传记录的刷新
-            if (allUploads.length > 0) {
-                recordsDiv.innerHTML = "";
-                const currentUsername = sessionStorage.getItem("username");
-                allUploads.forEach(record => {
-                    const div = document.createElement("div");
-                    div.className = "record-item";
-                    const isOwnRecord = record.username === currentUsername;
-                    div.innerHTML = `
-                        <div>
-                            <span class="record-user">${escapeHtml(record.username)}</span>
-                            <span class="record-count">上传了 ${record.count} 个元素</span>
-                        </div>
-                        <div class="record-actions">
-                            <span class="record-time">${record.timestamp}</span>
-                            ${isOwnRecord ? `<button class="btn-delete-record" onclick="deleteMyMatchUpload()">删除</button>` : ''}
-                        </div>
-                    `;
-                    recordsDiv.appendChild(div);
-                });
-            } else {
-                recordsDiv.innerHTML = '<div class="empty-state">暂无上传记录</div>';
-            }
 
             // 显示/隐藏操作按钮
             if (group.creator === sessionStorage.getItem("username")) {
