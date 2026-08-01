@@ -2911,6 +2911,9 @@ window.PSI_SUM = (function() {
         const resultCard = $('psiSumResultCard');
         if (!resultCard) return;
         resultCard.style.display = 'block';
+        // 2026-08-01 Friday v1.1.4: 有结果时显示下载按钮
+        const dlBtn = $('psiSumDownloadBtn');
+        if (dlBtn) dlBtn.style.display = 'inline-block';
         // 2026-07-30 Friday fix: 统一 psi-stats 加 我的/对方 元素数
         const myUp = detail.my_upload || {};
         const otherUp = detail.other_upload || {};
@@ -3113,9 +3116,15 @@ window.PSI_SUM = (function() {
                     return;
                 }
                 const reversed = [...rounds].reverse();
+                // 2026-08-01 Friday v1.1.4 Bug #3: receiver 端不显示"我的 value"按钮 (协议层 receiver 无 value)
+                const me = getUsername();
+                const myRole = (currentGroupDetail && currentGroupDetail.group && currentGroupDetail.group.creator === me) ? 'receiver' : 'sender';
                 list.innerHTML = reversed.map(r => {
                     const resultInfo = r.result || {};
                     const dur = r.computation_human ? `⏱ ${r.computation_human}` : '';
+                    const showMyValue = myRole === 'sender';
+                    const showSum = myRole === 'sender';
+                    const showCardinality = myRole === 'receiver';
                     return `
                         <div class="round-item">
                             <div class="round-header">
@@ -3123,19 +3132,20 @@ window.PSI_SUM = (function() {
                                 <span class="round-meta">${r.completed_at} · 由 ${r.completed_by} 保存${dur ? ' · ' + dur : ''}</span>
                             </div>
                             <div class="round-body">
-                                <span>我的集合: <strong>${r.my_upload_count}</strong> 个</span>
-                                <span style="margin-left: 20px;">我的 value: <strong>${r.my_value_count}</strong> 个</span>
-                                <span style="margin-left: 20px;">交集基数: <strong>${resultInfo.cardinality ?? '-'}</strong></span>
-                                <span style="margin-left: 20px;">求和: <strong>${resultInfo.sum ?? '-'}</strong></span>
+                                <span>我的集合：<strong>${r.my_upload_count}</strong> 个</span>
+                                ${showMyValue ? `<span style="margin-left: 20px;">我的 value: <strong>${r.my_value_count}</strong> 个</span>` : ''}
+                                ${showCardinality ? `<span style="margin-left: 20px;">交集基数：<strong>${resultInfo.cardinality ?? '-'}</strong></span>` : ''}
+                                ${showSum ? `<span style="margin-left: 20px;">求和：<strong>${resultInfo.sum ?? '-'}</strong></span>` : ''}
                             </div>
                             <div class="round-actions">
                                 <button class="btn btn-primary" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'my_plaintext')">📥 我的明文</button>
-                                <button class="btn btn-primary" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'my_value')">📥 我的 value</button>
-                                <button class="btn btn-success" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'result_cardinality')">📥 基数</button>
-                                <button class="btn btn-success" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'result_sum')">📥 求和</button>
+                                ${showMyValue ? `<button class="btn btn-primary" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'my_value')">📥 我的 value</button>` : ''}
+                                ${showCardinality ? `<button class="btn btn-success" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'result_cardinality')">📥 基数</button>` : ''}
+                                ${showSum ? `<button class="btn btn-success" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'result_sum')">📥 求和</button>` : ''}
                             </div>
                         </div>
                     `;
+                }).join('');
                 }).join('');
             }
         } catch (error) {
@@ -3173,6 +3183,32 @@ window.PSI_SUM = (function() {
         apiDownloadPSISumRoundFile(currentGroupId, roundNum, type);
     }
 
+    // 2026-08-01 Friday v1.1.4: 下载当前结果 (按角色返回 cardinality.txt / sum.txt)
+    async function downloadResult() {
+        if (!currentGroupId) return;
+        try {
+            const r = await fetch(`/api/psi-sum-group/${currentGroupId}/download-result`, {
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({ error: 'HTTP ' + r.status }));
+                alert('下载失败：' + (err.error || r.status));
+                return;
+            }
+            const disp = r.headers.get('Content-Disposition') || '';
+            const m = /filename="?([^";]+)"?/.exec(disp);
+            const filename = m ? m[1] : 'psi_sum_result.txt';
+            const blob = await r.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (err) {
+            alert('下载失败：' + err.message);
+        }
+    }
+
     return {
         init,
         createGroup,
@@ -3187,6 +3223,7 @@ window.PSI_SUM = (function() {
         loadPsiSumHistory,
         saveAndStartNewRound,
         downloadRoundFile,
+        downloadResult,
         handleFileSelected,
         _loadMyGroups: loadMyGroups,
         stop: stopPolling

@@ -421,8 +421,9 @@ def _psi_sum_get_extras(group, username):
 
     my_original_preview, my_original_full_count = _read_first_n(
         os.path.join(kunlun_dir, f"original_{role}.txt"))
+    # 2026-08-01 Friday v1.1.4 Bug #1 fix: 读 {role}_value.txt (跟 upload 写 + SpsoPSISum.run 读对齐)
     my_values_preview, my_values_full_count = _read_first_n(
-        os.path.join(kunlun_dir, f"value_{role}.txt"))
+        os.path.join(kunlun_dir, f"{role}_value.txt"))
     my_ciphertext_preview, my_ciphertext_full_count = _read_first_n(
         os.path.join(kunlun_dir, f"{role}_ciphertext.txt"))
 
@@ -903,7 +904,9 @@ def _make_finalize_round_handler(spec: ProtocolSpec):
                 return jsonify({'error': '小组不存在'}), 404
             if username not in group['members']:
                 return jsonify({'error': '你不是该小组成员'}), 403
-            if username != group['creator']:
+            # 2026-08-01 Friday v1.1.4: SS-PSI 放宽为双方都能归档 (2-party 设计, 不需要 receiver-only)
+            # 其他协议 (PSI/PSI-Match/PSI-Sum/PSU) 仍限制 creator-only
+            if spec.protocol_id != 'ss_psi' and username != group['creator']:
                 return jsonify({'error': '只有组长可以归档当前轮'}), 403
             ok, result = spec.manager_cls.finalize_round(group_id, username)
             if ok:
@@ -979,6 +982,7 @@ def _make_download_result_handler(spec: ProtocolSpec):
         try:
             from app import Config
             group_id = group_id.upper()
+            username = _get_username_or_login(spec)[0]
             data_dir = os.path.join(getattr(Config, spec.upload_data_dir_attr), f"group_{group_id}")
             # 协议特定结果文件名
             fname_map = {
@@ -987,12 +991,25 @@ def _make_download_result_handler(spec: ProtocolSpec):
                 'psu': 'union.txt',
             }
             fname = fname_map.get(spec.protocol_id)
+            # 2026-08-01 Friday v1.1.4: PSI-Sum 按 role 返不同文件 (receiver=cardinality, sender=sum)
+            if spec.protocol_id == 'psi_sum':
+                group = spec.manager_cls.get_group(group_id)
+                if not group:
+                    return jsonify({'error': '小组不存在'}), 404
+                is_receiver = username == group.get('creator')
+                fname = 'cardinality.txt' if is_receiver else 'sum.txt'
+                label = '基数' if is_receiver else '求和'
             if not fname:
                 return jsonify({'error': '该协议不支持 download-result'}), 400
             fpath = os.path.join(data_dir, fname)
             if not os.path.exists(fpath):
-                return jsonify({'error': '结果文件不存在'}), 404
-            return send_file(fpath, as_attachment=True)
+                return jsonify({'error': '结果文件不存在 (可能尚未运算或未归档)'}), 404
+            # 2026-08-01 Friday v1.1.4: PSI-Sum 返原始文件名 + 中文 label
+            download_name = fname
+            if spec.protocol_id == 'psi_sum':
+                ext = fname.split('.')[-1]
+                download_name = f"psi_sum_{label}_{group_id}.{ext}"
+            return send_file(fpath, as_attachment=True, download_name=download_name)
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return _auth_required(spec, handler)
