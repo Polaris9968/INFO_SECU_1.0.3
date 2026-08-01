@@ -182,8 +182,8 @@ pbsspmt/CMakeFiles/pbsspmt.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_oprf_gf128.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/build.make pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/build.make pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=22,23 "Built target test_oprf_gf128"
@@ -209,8 +209,8 @@ pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/build.make pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/build.make pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=24,25 "Built target test_oprf_okvs_basic"
@@ -236,8 +236,8 @@ pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_oprf.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_oprf.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_oprf.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_oprf.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_oprf.dir/build.make pbsspmt/test/CMakeFiles/test_oprf.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_oprf.dir/build.make pbsspmt/test/CMakeFiles/test_oprf.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=20,21 "Built target test_oprf"
@@ -263,8 +263,8 @@ pbsspmt/test/CMakeFiles/test_oprf.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_cuckoo3.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_cuckoo3.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_cuckoo3.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_cuckoo3.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_cuckoo3.dir/build.make pbsspmt/test/CMakeFiles/test_cuckoo3.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_cuckoo3.dir/build.make pbsspmt/test/CMakeFiles/test_cuckoo3.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=18,19 "Built target test_cuckoo3"
@@ -290,8 +290,8 @@ pbsspmt/test/CMakeFiles/test_cuckoo3.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_workflow.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_workflow.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_workflow.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_workflow.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_workflow.dir/build.make pbsspmt/test/CMakeFiles/test_workflow.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_workflow.dir/build.make pbsspmt/test/CMakeFiles/test_workflow.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=38,39,40 "Built target test_workflow"
@@ -317,8 +317,8 @@ pbsspmt/test/CMakeFiles/test_workflow.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_psi.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_psi.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_psi.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_psi.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_psi.dir/build.make pbsspmt/test/CMakeFiles/test_psi.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_psi.dir/build.make pbsspmt/test/CMakeFiles/test_psi.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=26,27,28 "Built target test_psi"
@@ -344,8 +344,8 @@ pbsspmt/test/CMakeFiles/test_psi.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_psu.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_psu.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_psu.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_psu.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_psu.dir/build.make pbsspmt/test/CMakeFiles/test_psu.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_psu.dir/build.make pbsspmt/test/CMakeFiles/test_psu.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=29,30,31 "Built target test_psu"
@@ -371,8 +371,8 @@ pbsspmt/test/CMakeFiles/test_psu.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_card.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_card.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_card.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_card.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_card.dir/build.make pbsspmt/test/CMakeFiles/test_card.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_card.dir/build.make pbsspmt/test/CMakeFiles/test_card.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=15,16,17 "Built target test_card"
@@ -398,8 +398,8 @@ pbsspmt/test/CMakeFiles/test_card.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_psum.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_psum.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_psum.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_psum.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_psum.dir/build.make pbsspmt/test/CMakeFiles/test_psum.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_psum.dir/build.make pbsspmt/test/CMakeFiles/test_psum.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=32,33,34 "Built target test_psum"
@@ -425,8 +425,8 @@ pbsspmt/test/CMakeFiles/test_psum.dir/clean:
 # Target rules for target pbsspmt/test/CMakeFiles/test_ss_psi.dir
 
 # All Build rule for target.
-pbsspmt/test/CMakeFiles/test_ss_psi.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 pbsspmt/test/CMakeFiles/test_ss_psi.dir/all: CMakeFiles/blake3.dir/all
+pbsspmt/test/CMakeFiles/test_ss_psi.dir/all: pbsspmt/CMakeFiles/pbsspmt.dir/all
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_ss_psi.dir/build.make pbsspmt/test/CMakeFiles/test_ss_psi.dir/depend
 	$(MAKE) $(MAKESILENT) -f pbsspmt/test/CMakeFiles/test_ss_psi.dir/build.make pbsspmt/test/CMakeFiles/test_ss_psi.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/root/projects/INFO_SECU_1.0.3/sPSO/build/CMakeFiles --progress-num=35,36,37 "Built target test_ss_psi"
