@@ -17,10 +17,6 @@
 #include "common.h"
 #include <map>
 #include <cstdint>
-#include <cstdlib>     // SPIKE 5: std::getenv / std::setenv
-#include <fstream>     // SPIKE 5: std::ofstream for OPRF dump
-#include <string>      // SPIKE 5: std::string(env) concat
-#include <algorithm>   // SPIKE 3: std::sort for stable union output
 
 // Threshold for auto-printing plaintext sets. Default-off for big sets to avoid spamming the terminal.
 constexpr uint64_t PRINT_SETS_MAX_N = 128;
@@ -71,19 +67,6 @@ static void sender_setup_phase(
     oprfRecv.init(cuco_sz, w, okvs_exp,
                   std::make_shared<coproto::Socket>(chl), oprfSeed);
     oprfRecv.run(out.cuco_tab, prf_vals);
-
-    // SPIKE 5 (2026-07-30 Friday demo): dump OPRF prf_vals per-cuckoo-bin for UI visibility.
-    // Set SPSO_DEMO_DUMP_DIR env via spso_runpso_capture(); user explicitly accepts demo security trade-off.
-    {
-        const char* dd = std::getenv("SPSO_DEMO_DUMP_DIR");
-        if (dd) {
-            std::ofstream f(std::string(dd) + "/oprf_prf_sender.txt");
-            for (size_t i = 0; i < prf_vals.size(); ++i) {
-                uint64_t lo = *reinterpret_cast<uint64_t*>(&prf_vals[i]);
-                f << lo << "\n";
-            }
-        }
-    }
 
     // ---- 3. OKVS decode (sender receives p-vector, decodes at cuckoo bins) ----
     uint64_t okvs_n = 3 * n;
@@ -178,18 +161,6 @@ static void recver_setup_phase(
     oprfSend.run();
     oprfSend.eval(okvs_key, okvs_value);
 
-    // SPIKE 5 (2026-07-30 Friday demo): dump OPRF okvs_value per-okvs-key BEFORE XOR r.
-    {
-        const char* dd = std::getenv("SPSO_DEMO_DUMP_DIR");
-        if (dd) {
-            std::ofstream f(std::string(dd) + "/oprf_prf_recver.txt");
-            for (size_t i = 0; i < okvs_value.size(); ++i) {
-                uint64_t lo = *reinterpret_cast<uint64_t*>(&okvs_value[i]);
-                f << lo << "\n";
-            }
-        }
-    }
-
     // ---- 3. OKVS encode + send p-vector ----
     std::vector<block> r(cuco_sz);
     PRNG prng_once(block(233));
@@ -258,44 +229,14 @@ static void recver_setup_phase(
 }
 
 void run_pso(PSOMode mode, bool print_sets,
-             std::vector<uint64_t> payload, uint64_t p_in, uint64_t q_in,
-             const std::vector<uint64_t>* sender_set_in,
-             const std::vector<uint64_t>* recver_set_in,
-             std::vector<std::string>* out_ss_share_sender,
-             std::vector<std::string>* out_ss_share_receiver) {
+             std::vector<uint64_t> payload, uint64_t p_in, uint64_t q_in) {
     // ---------------------------- parameters ----------------------------
-    // SPIKE 2: when sender_set_in / recver_set_in are provided, use them as
-    // protocol input (skipping set_gen). When null, fall back to random sets.
-    const bool use_input_sets = (sender_set_in != nullptr && recver_set_in != nullptr);
-    // NOTE: sender and receiver sets can have different sizes in PSI mode.
-    // (Cuckoo hashing naturally leaves empty bins for whichever side has fewer
-    // elements; protocol only requires the two SETS' sizes to satisfy the
-    // cuckoo hashing constraints individually.)
-    // n is the input size when caller provides sets; otherwise DEFAULT_N.
-    // We use a runtime-modifiable n (not const) for that reason.
-    uint64_t n = use_input_sets ? sender_set_in->size() : DEFAULT_N;
+    const uint64_t n          = DEFAULT_N;
     const uint64_t inter      = DEFAULT_INTER;
     const double   okvs_exp   = DEFAULT_OKVS_EXP;
+    const uint64_t w          = DEFAULT_OKVS_W;
     const double   cuckoo_exp = CUCKOO_EXPANSION;       // 1.22
     const uint64_t cuco_sz    = std::ceil(cuckoo_exp * n);
-
-    // SPIKE 2: OKVS init requires m > w. The OPRF side uses n=cuco_sz (not 3n),
-    // so the OKVS m there is ceil(cuco_sz * okvs_exp). For n=32: cuco_sz=40,
-    // m_oprf = ceil(40 * 1.3) = 52. w must satisfy m_oprf > w and be a multiple
-    // of 8, so w <= 48 for n=32. For larger n (n >= 79), DEFAULT_OKVS_W=96 fits.
-    uint64_t w = DEFAULT_OKVS_W;
-    {
-        uint64_t m_oprf = static_cast<uint64_t>(
-            std::ceil(static_cast<double>(cuco_sz) * okvs_exp));
-        if (m_oprf <= w) {
-            uint64_t w_new = ((m_oprf - 1) / 8) * 8;
-            if (w_new < 8) w_new = 8;       // OKVS requires w >= 8 and multiple of 8
-            std::cout << "[spike2] OPRF OKVS m=" << m_oprf << " <= DEFAULT_OKVS_W="
-                      << DEFAULT_OKVS_W << ", scaling w down to " << w_new
-                      << " (OKVS init requires m > w)" << std::endl;
-            w = w_new;
-        }
-    }
 
     // Captured protocol results (filled by the receiver thread for plaintext dump)
     std::set<uint64_t> captured_intersection;       // PSI  mode: receiver's X ∩ Y
@@ -329,19 +270,9 @@ void run_pso(PSOMode mode, bool print_sets,
     //   S = [0, n)         \\\\  (TESTING_NOTES §1: was [1, n) → off-by-one, intersection = inter+1)
     //   R = [n-inter, 2n-inter)
     //   ⇒ |S ∩ R| = inter   (verified)
-    //
-    //   SPIKE 2: when input sets provided, copy them in (skip set_gen).
-    //   The `inter` constant is the expected |S ∩ R| for the random sets
-    //   case; for input sets, the actual intersection is whatever the
-    //   protocol recovers (verified post-hoc against the input vectors).
     vector<uint64_t> sender_set(n), recver_set(n);
-    if (use_input_sets) {
-        std::copy(sender_set_in->begin(), sender_set_in->end(), sender_set.begin());
-        std::copy(recver_set_in->begin(), recver_set_in->end(), recver_set.begin());
-    } else {
-        set_gen(n, (uint64_t)0,        sender_set, setGenSeed);
-        set_gen(n, n - inter,          recver_set, setGenSeed);
-    }
+    set_gen(n, (uint64_t)0,        sender_set, setGenSeed);
+    set_gen(n, n - inter,          recver_set, setGenSeed);
 
     cout << "=================== Mode: " << mode_name(mode)
          << " | n=" << n << ", inter=" << inter
@@ -366,7 +297,6 @@ void run_pso(PSOMode mode, bool print_sets,
     uint64_t expected_sum_mod_q = 0;
     uint64_t captured_sum        = 0;
     bool     sum_match           = false;
-    uint64_t captured_card       = 0;  // SPIKE 3: cardinality for CARD mode (function-scope)
     if (mode == MODE_PSI_SUM) {
         if (q <= p) {
             throw std::runtime_error("run_pso(MODE_PSI_SUM): require q > p (paper: q > n·p)");
@@ -696,7 +626,6 @@ void run_pso(PSOMode mode, bool print_sets,
                 for (uint64_t i = 0; i < cuco_sz; ++i) {
                     card += (msg[i].get<uint64_t>(0) & 1);
                 }
-                captured_card = card;  // SPIKE 3: copy to function-scope for stdout dump
                 cout << "[receiver] ★ PSI-Card verification:" << endl;
                 cout << "  cardinality            = " << card
                      << "  (期望 = inter = " << inter << ")" << endl;
@@ -866,68 +795,6 @@ void run_pso(PSOMode mode, bool print_sets,
     } else if (mode != MODE_CARD && !print_sets && n > PRINT_SETS_MAX_N) {
         cout << "[info] n=" << n << " > " << PRINT_SETS_MAX_N
              << ", skipping plaintext dump (use --print-sets to force)" << endl;
-    }
-
-    // ---------------------------- SPIKE 2/3: structured output dump ----------------------------
-    // When the caller provided input sets, emit structured blocks to stdout
-    // for spso_runner.cpp to parse and convert back to original string tokens.
-    // Mode coverage:
-    //   MODE_PSI     → INTERSECTION_START / END (uint64 set elements)
-    //   MODE_SS_PSI  → also INTERSECTION_START / END (uint64 set, recovered via shares)
-    //   MODE_PSU     → UNION_START / END (uint64 set elements of X ∪ Y)
-    //   MODE_CARD    → CARDINALITY_VALUE: <N> (single integer line)
-    //   MODE_PSI_SUM → SUM_VALUE: <N>  (single integer line, plus CARDINALITY_VALUE)
-    if (use_input_sets) {
-        if (mode == MODE_PSI || mode == MODE_SS_PSI) {
-            cout << "=== INTERSECTION_START ===" << endl;
-            for (uint64_t v : captured_intersection) {
-                cout << "0x" << std::hex << std::setw(16) << std::setfill('0') << v
-                     << std::dec << std::setfill(' ') << endl;
-            }
-            cout << "=== INTERSECTION_END ===" << endl;
-            cout << "[spike2] recovered intersection size = " << captured_intersection.size() << endl;
-        } else if (mode == MODE_PSU) {
-            cout << "=== UNION_START ===" << endl;
-            // Sort union elements for stable output (deterministic for tests)
-            std::vector<uint64_t> union_sorted(captured_union.begin(), captured_union.end());
-            std::sort(union_sorted.begin(), union_sorted.end());
-            for (uint64_t v : union_sorted) {
-                cout << "0x" << std::hex << std::setw(16) << std::setfill('0') << v
-                     << std::dec << std::setfill(' ') << endl;
-            }
-            cout << "=== UNION_END ===" << endl;
-            cout << "[spike3] recovered union size = " << union_sorted.size() << endl;
-        } else if (mode == MODE_CARD) {
-            cout << "=== CARDINALITY_VALUE: " << captured_card << " ===" << endl;
-            cout << "[spike3] recovered cardinality = " << captured_card << endl;
-        } else if (mode == MODE_PSI_SUM) {
-            cout << "=== PSI_SUM_VALUE: " << captured_sum << " ===" << endl;
-        }
-        cout.flush();
-    }
-
-    // 2026-07-30 Friday fix: SS-PSI mode 输出两份额 (sender 的 r_i, receiver 的 z_i)
-    // 两份额各自 128-bit block → 32 hex chars
-    // 每方拿到自己的份额:单独一方拿不到明文交集(避免泄漏)
-    if (mode == MODE_SS_PSI) {
-        auto block_to_hex = [](const block& b) {
-            std::ostringstream oss;
-            uint64_t hi = b.get<uint64_t>(0);
-            uint64_t lo = b.get<uint64_t>(1);
-            oss << std::hex << std::setw(16) << std::setfill('0') << hi
-                << std::setw(16) << std::setfill('0') << lo;
-            return oss.str();
-        };
-        if (out_ss_share_sender && !ss_r_captured.empty()) {
-            out_ss_share_sender->clear();
-            out_ss_share_sender->reserve(ss_r_captured.size());
-            for (const auto& b : ss_r_captured) out_ss_share_sender->push_back(block_to_hex(b));
-        }
-        if (out_ss_share_receiver && !ss_z_captured.empty()) {
-            out_ss_share_receiver->clear();
-            out_ss_share_receiver->reserve(ss_z_captured.size());
-            for (const auto& b : ss_z_captured) out_ss_share_receiver->push_back(block_to_hex(b));
-        }
     }
 }
 

@@ -1,0 +1,3 @@
+CompileFlags:
+  Add: ["-Iexternal/install/include", "-Ipbsspmt/include", "-Lexternal/install/lib"],
+  Remove: ["-fcoroutines"]

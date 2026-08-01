@@ -1,0 +1,9 @@
+[submodule "external/blake3"]
+	path = external/blake3
+	url = https://github.com/BLAKE3-team/BLAKE3.git
+[submodule "external/libOTe"]
+	path = external/libOTe
+	url = https://github.com/osu-crypto/libOTe.git
+[submodule "external/secure-join"]
+	path = external/secure-join
+	url = https://github.com/ladnir/secure-join.git

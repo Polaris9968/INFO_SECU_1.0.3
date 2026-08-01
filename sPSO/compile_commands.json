@@ -1,0 +1,104 @@
+[
+{
+  "directory": "/home/diploma_proj/sPSO/build",
+  "command": "/usr/bin/cc  -I/home/diploma_proj/sPSO/external/blake3/c  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -msse2 -mavx2 -mavx512f -mavx512vl -o CMakeFiles/blake3.dir/external/blake3/c/blake3.c.o -c /home/diploma_proj/sPSO/external/blake3/c/blake3.c",
+  "file": "/home/diploma_proj/sPSO/external/blake3/c/blake3.c",
+  "output": "CMakeFiles/blake3.dir/external/blake3/c/blake3.c.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build",
+  "command": "/usr/bin/cc  -I/home/diploma_proj/sPSO/external/blake3/c  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -msse2 -mavx2 -mavx512f -mavx512vl -o CMakeFiles/blake3.dir/external/blake3/c/blake3_dispatch.c.o -c /home/diploma_proj/sPSO/external/blake3/c/blake3_dispatch.c",
+  "file": "/home/diploma_proj/sPSO/external/blake3/c/blake3_dispatch.c",
+  "output": "CMakeFiles/blake3.dir/external/blake3/c/blake3_dispatch.c.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build",
+  "command": "/usr/bin/cc  -I/home/diploma_proj/sPSO/external/blake3/c  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -msse2 -mavx2 -mavx512f -mavx512vl -o CMakeFiles/blake3.dir/external/blake3/c/blake3_portable.c.o -c /home/diploma_proj/sPSO/external/blake3/c/blake3_portable.c",
+  "file": "/home/diploma_proj/sPSO/external/blake3/c/blake3_portable.c",
+  "output": "CMakeFiles/blake3.dir/external/blake3/c/blake3_portable.c.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build",
+  "command": "/usr/bin/cc  -I/home/diploma_proj/sPSO/external/blake3/c  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -msse2 -mavx2 -mavx512f -mavx512vl -o CMakeFiles/blake3.dir/external/blake3/c/blake3_sse2.c.o -c /home/diploma_proj/sPSO/external/blake3/c/blake3_sse2.c",
+  "file": "/home/diploma_proj/sPSO/external/blake3/c/blake3_sse2.c",
+  "output": "CMakeFiles/blake3.dir/external/blake3/c/blake3_sse2.c.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build",
+  "command": "/usr/bin/cc  -I/home/diploma_proj/sPSO/external/blake3/c  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -msse2 -mavx2 -mavx512f -mavx512vl -o CMakeFiles/blake3.dir/external/blake3/c/blake3_sse41.c.o -c /home/diploma_proj/sPSO/external/blake3/c/blake3_sse41.c",
+  "file": "/home/diploma_proj/sPSO/external/blake3/c/blake3_sse41.c",
+  "output": "CMakeFiles/blake3.dir/external/blake3/c/blake3_sse41.c.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build",
+  "command": "/usr/bin/cc  -I/home/diploma_proj/sPSO/external/blake3/c  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -msse2 -mavx2 -mavx512f -mavx512vl -o CMakeFiles/blake3.dir/external/blake3/c/blake3_avx2.c.o -c /home/diploma_proj/sPSO/external/blake3/c/blake3_avx2.c",
+  "file": "/home/diploma_proj/sPSO/external/blake3/c/blake3_avx2.c",
+  "output": "CMakeFiles/blake3.dir/external/blake3/c/blake3_avx2.c.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build",
+  "command": "/usr/bin/cc  -I/home/diploma_proj/sPSO/external/blake3/c  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -msse2 -mavx2 -mavx512f -mavx512vl -o CMakeFiles/blake3.dir/external/blake3/c/blake3_avx512.c.o -c /home/diploma_proj/sPSO/external/blake3/c/blake3_avx512.c",
+  "file": "/home/diploma_proj/sPSO/external/blake3/c/blake3_avx512.c",
+  "output": "CMakeFiles/blake3.dir/external/blake3/c/blake3_avx512.c.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/pbsspmt.dir/src/oprf.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/src/oprf.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/src/oprf.cpp",
+  "output": "pbsspmt/CMakeFiles/pbsspmt.dir/src/oprf.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/pbsspmt.dir/src/galois128.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/src/galois128.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/src/galois128.cpp",
+  "output": "pbsspmt/CMakeFiles/pbsspmt.dir/src/galois128.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/pbsspmt.dir/src/okvsbk.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/src/okvsbk.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/src/okvsbk.cpp",
+  "output": "pbsspmt/CMakeFiles/pbsspmt.dir/src/okvsbk.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/pbsspmt.dir/src/cuckoo3.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/src/cuckoo3.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/src/cuckoo3.cpp",
+  "output": "pbsspmt/CMakeFiles/pbsspmt.dir/src/cuckoo3.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt/test",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/test_oprf_gf128.dir/test_galois128.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/test/test_galois128.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/test/test_galois128.cpp",
+  "output": "pbsspmt/test/CMakeFiles/test_oprf_gf128.dir/test_galois128.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt/test",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/test_oprf_okvs_basic.dir/test_okvs_basic.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/test/test_okvs_basic.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/test/test_okvs_basic.cpp",
+  "output": "pbsspmt/test/CMakeFiles/test_oprf_okvs_basic.dir/test_okvs_basic.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt/test",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/test_oprf.dir/test_oprf.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/test/test_oprf.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/test/test_oprf.cpp",
+  "output": "pbsspmt/test/CMakeFiles/test_oprf.dir/test_oprf.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt/test",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/test_cuckoo3.dir/test_cuckoo3.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/test/test_cuckoo3.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/test/test_cuckoo3.cpp",
+  "output": "pbsspmt/test/CMakeFiles/test_cuckoo3.dir/test_cuckoo3.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt/test",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/test_workflow.dir/test_flow.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/test/test_flow.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/test/test_flow.cpp",
+  "output": "pbsspmt/test/CMakeFiles/test_workflow.dir/test_flow.cpp.o"
+},
+{
+  "directory": "/home/diploma_proj/sPSO/build/pbsspmt/test",
+  "command": "/usr/bin/c++ -DBOOST_SYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -DHAVE_OPENMP=1 -I/home/diploma_proj/sPSO/pbsspmt/include -I/home/diploma_proj/sPSO/external/install/include/secureJoin -I/home/diploma_proj/sPSO/external/blake3/c -isystem /home/diploma_proj/sPSO/external/install/include  -Wall -Wfatal-errors -Wno-unused-variable -fopenmp -mavx2 -mpclmul -msse2 -O3 -fcoroutines -std=gnu++20 -maes -msse2 -msse3 -mssse3 -msse4.1 -mpclmul -mavx2 -Wno-error=switch -fopenmp -o CMakeFiles/test_permcg.dir/test_permcg.cpp.o -c /home/diploma_proj/sPSO/pbsspmt/test/test_permcg.cpp",
+  "file": "/home/diploma_proj/sPSO/pbsspmt/test/test_permcg.cpp",
+  "output": "pbsspmt/test/CMakeFiles/test_permcg.dir/test_permcg.cpp.o"
+}
+]

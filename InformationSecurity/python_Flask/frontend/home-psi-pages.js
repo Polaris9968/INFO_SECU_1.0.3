@@ -3117,7 +3117,9 @@ window.PSI_SUM = (function() {
                 }
                 const reversed = [...rounds].reverse();
                 // 2026-08-01 Friday v1.1.4 Bug #3: receiver 端不显示"我的 value"按钮 (协议层 receiver 无 value)
-                const me = getUsername();
+                const token = sessionStorage.getItem('token') || '';
+                let me = '';
+                try { me = JSON.parse(atob(token.split('.')[1])).username || ''; } catch {} 
                 const myRole = (currentGroupDetail && currentGroupDetail.group && currentGroupDetail.group.creator === me) ? 'receiver' : 'sender';
                 list.innerHTML = reversed.map(r => {
                     const resultInfo = r.result || {};
@@ -3186,8 +3188,9 @@ window.PSI_SUM = (function() {
     async function downloadResult() {
         if (!currentGroupId) return;
         try {
+            const token = sessionStorage.getItem('token') || localStorage.getItem('jwt_token') || '';
             const r = await fetch(`/api/psi-sum-group/${currentGroupId}/download-result`, {
-                headers: { 'Authorization': 'Bearer ' + getToken() }
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             if (!r.ok) {
                 const err = await r.json().catch(() => ({ error: 'HTTP ' + r.status }));

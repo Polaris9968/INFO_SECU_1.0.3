@@ -3744,7 +3744,7 @@ body > .sidebar {
                 <div id="currentPSIMatchGroupSection">
                     <div class="card group-info-card">
                         <h2>🔒 <span id="currentPSIMatchGroupName"></span></h2>
-                        <div class="group-code" id="currentPSIMatchGroupId">ABCD</div>
+                        <div class="psi-group-code" id="currentPSIMatchGroupId">ABCD</div>
                         <div class="group-info-item">
                             <span class="group-info-label">组长</span>
                             <span class="group-info-value" id="psiMatchGroupCreator"></span>
@@ -3763,14 +3763,20 @@ body > .sidebar {
                         </div>
                     </div>
 
+                    <!-- 2026-08-01 Friday v1.1.4: 跟 PSI_INT 对齐，加"成员状态"卡 (含上传状态 + 进度条) -->
                     <div class="card">
-                        <h2>👥 小组成员</h2>
-                        <div class="member-list" id="psiMatchMemberList">
+                        <h2>👥 成员状态</h2>
+                        <div id="psiMatchMemberStatusList">
+                            <!-- 动态生成 -->
                         </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="psiMatchProgressFill"></div>
+                        </div>
+                        <div class="status-text" id="psiMatchProgressText">等待成员上传文件...</div>
                     </div>
 
                     <div class="card">
-                        <h2>📁 上传文件</h2>
+                        <h2> 上传文件</h2>
                         <p style="color: #666; margin-bottom: 10px;">支持整数、小数、字符串、中文，以空格、换行或逗号分隔</p>
                         <div class="upload-area" onclick="document.getElementById('psiMatchFileInput').click()">
                             <input type="file" id="psiMatchFileInput" accept=".txt,.csv,.json" onchange="handlePSIMatchFileUpload(this)">
@@ -3839,20 +3845,14 @@ body > .sidebar {
                         </div>
 
                         <!-- 2026-07-02:PSIMatch 下载运算结果(唯一按钮,按上传格式输出) -->
-                        <button class="btn btn-primary" id="psiMatchDownloadBtn" style="display:none; margin-top: 15px;" onclick="downloadPSIMatchResult()">📥 下载完整结果</button>
-                    </div>
-
-                    <div class="card">
-                        <h2>📋 上传记录</h2>
-                        <div id="psiMatchUploadRecords">
-                            <div class="empty-state">暂无上传记录</div>
-                        </div>
+                        <button class="btn btn-primary" id="psiMatchDownloadBtn" style="display:none; margin-top: 15px;" onclick="downloadPSIMatchResult()"> 下载完整结果</button>
                     </div>
 
                     <div class="card">
                         <h2>⚙️ 操作</h2>
                         <div class="action-buttons">
-                            <button class="btn btn-success" onclick="refreshCurrentPSIMatchGroup()">🔄 刷新</button>
+                            <!-- 2026-08-01 Friday v1.1.4: 跟 PSI_INT 对齐，删"刷新"(已有 polling) + 加"删除我的上传" -->
+                            <button class="btn btn-warning hidden" id="psiMatchDeleteMyUploadBtn" onclick="deleteMyMatchUpload()">🗑️ 删除我的上传</button>
                             <button class="btn btn-danger hidden" id="leavePSIMatchGroupBtn" onclick="leaveCurrentPSIMatchGroup()">退出小组</button>
                             <button class="btn btn-danger hidden" id="deletePSIMatchGroupBtn" onclick="deleteCurrentPSIMatchGroup()">解散小组</button>
                             <button class="save-round-btn hidden" id="psiMatchSaveRoundBtn" onclick="PSI_MATCH.saveAndStartNewRound()">💾 保存当前结果,开始下一轮</button>
