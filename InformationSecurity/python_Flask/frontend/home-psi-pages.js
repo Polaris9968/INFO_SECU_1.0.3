@@ -606,6 +606,63 @@ function updateMemberStatus(myUpload, otherUpload) {
     uploadedOtherFile = otherUpload !== null;
 }
 
+// 2026-08-01 Friday v1.1.4: PSI-Match 成员状态渲染 (跟 PSI_INT 对齐)
+function updateMatchMemberStatus(myUpload, otherUpload) {
+    const memberStatusList = document.getElementById("psiMatchMemberStatusList");
+    const progressFill = document.getElementById("psiMatchProgressFill");
+    const progressText = document.getElementById("psiMatchProgressText");
+    if (!memberStatusList || !progressFill || !progressText) return;
+
+    memberStatusList.innerHTML = "";
+
+    const myStatus = document.createElement("div");
+    myStatus.className = "member-status";
+    const username = sessionStorage.getItem("username") || "我";
+    myStatus.innerHTML = `
+        <div class="member-info">
+            <div class="member-avatar">${username.charAt(0).toUpperCase()}</div>
+            <div>
+                <div class="member-name">${username}</div>
+                <div class="member-status-text ${myUpload ? 'uploaded' : 'not-uploaded'}">
+                    ${myUpload ? '✓ 已上传' : '等待上传'}
+                </div>
+            </div>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot ${myUpload ? 'ready' : 'waiting'}"></div>
+            <span class="status-text">${myUpload ? '准备就绪' : '等待上传'}</span>
+        </div>
+    `;
+    memberStatusList.appendChild(myStatus);
+
+    const otherStatus = document.createElement("div");
+    otherStatus.className = "member-status";
+    otherStatus.innerHTML = `
+        <div class="member-info">
+            <div class="member-avatar">?</div>
+            <div>
+                <div class="member-name">对方</div>
+                <div class="member-status-text ${otherUpload ? 'uploaded' : 'not-uploaded'}">
+                    ${otherUpload ? '✓ 已上传' : '等待上传'}
+                </div>
+            </div>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot ${otherUpload ? 'ready' : 'waiting'}"></div>
+            <span class="status-text">${otherUpload ? '准备就绪' : '等待上传'}</span>
+        </div>
+    `;
+    memberStatusList.appendChild(otherStatus);
+
+    const uploadedCount = (myUpload ? 1 : 0) + (otherUpload ? 1 : 0);
+    const progressPercent = (uploadedCount / 2) * 100;
+    progressFill.style.width = progressPercent + "%";
+    progressText.innerText = `${uploadedCount}/2 成员已上传`;
+
+    uploadedMyMatchFile = myUpload !== null;
+    uploadedOtherMatchFile = otherUpload !== null;
+}
+
 async function leaveCurrentPSIGroup() {
     if (!currentPSIGroupId) return;
 
@@ -1168,13 +1225,18 @@ async function refreshCurrentPSIMatchGroup() {
 
             // 更新成员列表
             const memberList = document.getElementById("psiMatchMemberList");
-            memberList.innerHTML = "";
-            group.members.forEach(member => {
-                const tag = document.createElement("span");
-                tag.className = "member-tag" + (member === group.creator ? " creator" : "");
-                tag.innerText = member + (member === group.creator ? " 👑" : "");
-                memberList.appendChild(tag);
-            });
+            if (memberList) {
+                memberList.innerHTML = "";
+                group.members.forEach(member => {
+                    const tag = document.createElement("span");
+                    tag.className = "member-tag" + (member === group.creator ? " creator" : "");
+                    tag.innerText = member + (member === group.creator ? " 👑" : "");
+                    memberList.appendChild(tag);
+                });
+            }
+
+            // 2026-08-01 Friday v1.1.4: 跟 PSI_INT 对齐，渲染成员状态卡
+            updateMatchMemberStatus(myUpload, otherUpload);
 
             // 更新上传按钮
             const uploadBtn = document.getElementById("psiMatchUploadBtn");
