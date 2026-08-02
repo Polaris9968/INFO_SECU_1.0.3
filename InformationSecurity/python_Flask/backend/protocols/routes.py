@@ -1028,19 +1028,32 @@ def _make_download_result_with_original_handler(spec: ProtocolSpec):
             # PSU: union_with_original.txt(从归档读)
             # PSI-Match / PSI-Card: 当前 round 的 reverse map 文件(未归档版本)
             if spec.protocol_id in ('psi', 'psu'):
-                # 找归档 round1
                 group = spec.manager_cls.get_group(group_id)
                 if not group:
                     return jsonify({'error': '小组不存在'}), 404
                 rounds = group.get('rounds', [])
-                if not rounds:
-                    return jsonify({'error': '尚无归档轮次'}), 404
-                last_round = rounds[-1]
-                key = 'intersection_with_original' if spec.protocol_id == 'psi' else 'union_with_original'
-                fpath = last_round.get('archive_files', {}).get(key)
-                if not fpath or not os.path.exists(fpath):
-                    return jsonify({'error': '原始版结果不存在(旧归档或尚未生成)'}), 404
-                return send_file(fpath, as_attachment=True)
+                if rounds:
+                    last_round = rounds[-1]
+                    key = 'intersection_with_original' if spec.protocol_id == 'psi' else 'union_with_original'
+                    fpath = last_round.get('archive_files', {}).get(key)
+                    if fpath and os.path.exists(fpath):
+                        return send_file(fpath, as_attachment=True)
+                # 2026-08-02 fix: 无归档(运算后未保存轮次)也支持下载 — 实时 reverse_map
+                # (之前直接 404 “尚无归档轮次” → 前端“下载失败”; 且 union.txt 含
+                # __spike2_pad_* 假 token, 这里一并过滤)
+                from app import _build_reverse_map
+                reverse_map = _build_reverse_map(group, group.get('standardize_mode', 'auto'))
+                fname = 'intersection.txt' if spec.protocol_id == 'psi' else 'union.txt'
+                fpath = os.path.join(data_dir, fname)
+                if not os.path.exists(fpath):
+                    return jsonify({'error': '结果文件不存在(请先完成运算)'}), 404
+                with open(fpath, 'r', encoding='utf-8') as f:
+                    lines = [l.strip() for l in f if l.strip() and not l.startswith('__spike')]
+                with_orig = '\n'.join(reverse_map.get(v, v) for v in lines) + '\n'
+                import io as _io
+                return send_file(_io.BytesIO(with_orig.encode('utf-8')),
+                                 as_attachment=True,
+                                 download_name=fname.replace('.txt', '_with_original.txt'))
             else:
                 # PSI-Match / PSI-Card: 用 reverse map 实时生成
                 from app import _build_reverse_map

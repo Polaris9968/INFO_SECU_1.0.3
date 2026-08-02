@@ -17,6 +17,13 @@ class PSIUnionGroupManager(BaseGroupManager):
     )
     stale_filenames = (
         'union.txt',
+        # 2026-08-02 fix: 归档后清全部轮次文件, 否则下一轮明文预览/密文
+        # 残留上一轮数据 (哥反馈: sender 下一轮后明文 32 条不消失)
+        'receiver.txt', 'sender.txt',
+        'receiver_ciphertext.txt', 'sender_ciphertext.txt',
+        'oprf_prf_recver.txt', 'oprf_prf_sender.txt',
+        'original_receiver.txt', 'original_sender.txt',
+        'union_with_original.txt',
     )
 
     generate_with_original = True

@@ -192,13 +192,31 @@ class SpsoPSU(BaseRunner):
         def _parse(content, lines):
             items = [l for l in lines if not l.startswith('__spike')]
             return {'union': items, 'count': len(items)}
-        return _run_spso_mode(
+        result = _run_spso_mode(
             group_id,
             data_dir_attr=cls.data_dir_attr,
             spso_mode='psu',
             output_filename='union.txt',
             parse_fn=_parse,
         )
+        # 2026-08-02 fix: 文件层也过滤 padding sentinel。
+        # 之前只在 parse 层过滤 → union.txt 文件本身含 58 行 __spike2_pad_* 假 token,
+        # download-result / finalize 归档 / with-original 全读到脏数据。
+        if result.get('success'):
+            try:
+                from app import Config
+                import os as _os
+                data_dir = _os.path.join(getattr(Config, cls.data_dir_attr), f"group_{group_id}")
+                union_path = _os.path.join(data_dir, 'union.txt')
+                if _os.path.exists(union_path):
+                    with open(union_path, 'r', encoding='utf-8') as f:
+                        lines = [l for l in f if l.strip() and not l.startswith('__spike')]
+                    with open(union_path, 'w', encoding='utf-8') as f:
+                        f.write('\n'.join(lines) + ('\n' if lines else ''))
+                    print(f'[SpsoPSU] union.txt 过滤 padding: {len(lines)} 行')
+            except Exception as e:
+                print(f'[SpsoPSU] union.txt 过滤失败(非致命): {e}')
+        return result
 
 
 # ============================================================
