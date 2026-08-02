@@ -1294,6 +1294,9 @@ async function refreshCurrentPSIMatchGroup() {
                 document.getElementById("psiMatchResultCard").style.display = 'block';
                 document.getElementById("matchResultContainer").style.display = 'block';
                 document.getElementById("matchCiphertextContainer").style.display = 'none';
+                // 2026-08-02 fix: 明文预览也清(下一轮后不残留上一轮明文)
+                document.getElementById("matchMyPlaintextContainer").style.display = 'none';
+                document.getElementById("matchMyPlaintext").innerText = '';
                 document.getElementById("psiMatchDownloadBtn").style.display = 'none';
             }
 

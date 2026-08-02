@@ -19,6 +19,12 @@ class PSIMatchGroupManager(BaseGroupManager):
     stale_filenames = (
         'cardinality.txt',
         'matched.txt',  # SPIKE 3: matched.txt 也要在归档后顶层删
+        # 2026-08-02 fix: 密文/OPRF 中间产物也要归档后删, 否则下一轮
+        # 密文预览还显示上一轮数据 (截图: 下一轮后“合计 96 个”残留)
+        'receiver_ciphertext.txt',
+        'sender_ciphertext.txt',
+        'oprf_prf_recver.txt',
+        'oprf_prf_sender.txt',
     )
 
     generate_with_original = False  # SPIKE 3: 现在有 matched_items 可 reverse_map;

@@ -290,8 +290,11 @@ class BaseGroupManager:
 
             cls.save_groups(data)
 
-            # 9. 清掉 pending_computation(round_record 已写入,避免污染下一轮)
-            group.pop('pending_computation', None)
+            # 9. 清掉 pending_computation + 当前轮结果字段(round_record 已写入,
+            #    避免下一轮 UI 残留上一轮数据: 2026-08-02 PSI-Match 下一轮后
+            #    交集基数/缺失数/子集判断不消失, SS-PSI 旧 share 残留)
+            for _key in ('pending_computation', 'subset_result', 'result'):
+                group.pop(_key, None)
             cls.save_groups(data)
 
             return True, round_record
