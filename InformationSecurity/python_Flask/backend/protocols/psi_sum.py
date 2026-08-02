@@ -80,6 +80,114 @@ class PSISumGroupManager(BaseGroupManager):
             values.append(v)
         return items, original_items, values
 
+    # === PSI-Sum JSON parser (2026-08-02 重建: v1.1.3 的版本在 8-1 目录清理时丢失) ===
+    # 自动探测 token/value 字段, 支持 3 种结构:
+    #   1. list-of-dict: [{"token": "a", "value": 10}, ...]
+    #   2. wrapper: {"items"|"data"|"records"|...: [...]} 或任意顶层 list
+    #   3. 纯 token list: ["a", "b"] (value 全 0)
+    # 显式 override: token_path / value_path (dotted path, 如 "user.id")
+    @staticmethod
+    def parse_json_with_values(content, mode='auto', token_path=None, value_path=None):
+        import json as _json
+        data = _json.loads(content)
+        # 解 wrapper: dict 里找 list
+        if isinstance(data, dict):
+            for key in ('items', 'data', 'records', 'values', 'list', 'rows'):
+                if key in data and isinstance(data[key], list):
+                    data = data[key]
+                    break
+            else:
+                for _v in data.values():
+                    if isinstance(_v, list):
+                        data = _v
+                        break
+        if not isinstance(data, list):
+            raise ValueError('JSON 顶层必须是数组或包含数组字段(items/data/records 等)')
+        if not data:
+            return [], [], []
+
+        def _get_path(obj, path):
+            cur = obj
+            for _p in path.split('.'):
+                if isinstance(cur, dict) and _p in cur:
+                    cur = cur[_p]
+                else:
+                    return None
+            return cur
+
+        # 纯 token list: ["a", "b", 3]
+        if all(not isinstance(x, (dict, list)) for x in data):
+            items, original_items, values = [], [], []
+            for tok in data:
+                tok = str(tok).strip()
+                std = _standardize_token(tok, mode)
+                if std is None:
+                    continue
+                items.append(std)
+                original_items.append(tok)
+                values.append(0)
+            return items, original_items, values
+
+        token_keys = ['token', 'id', '_id', 'name', 'user_id', 'email', 'user', 'key']
+        value_keys = ['value', 'amount', 'sum', 'weight', 'score', 'val', 'count', 'price', 'total']
+        items, original_items, values = [], [], []
+        for row in data:
+            if not isinstance(row, dict):
+                continue
+            # ---- token ----
+            tok = None
+            if token_path:
+                tok = _get_path(row, token_path)
+            if tok is None:
+                for _k in token_keys:
+                    if _k in row and row[_k] is not None:
+                        tok = row[_k]
+                        break
+            if tok is None:
+                # 第一个非 value 字段的标量
+                for _k, _v in row.items():
+                    if _k in value_keys or _k == token_path:
+                        continue
+                    if isinstance(_v, (str, int, float)) and not isinstance(_v, bool):
+                        tok = _v
+                        break
+            if tok is None:
+                continue
+            tok = str(tok).strip()
+            std = _standardize_token(tok, mode)
+            if std is None:
+                continue
+            # ---- value ----
+            val = 0
+            v_raw = None
+            if value_path:
+                v_raw = _get_path(row, value_path)
+            if v_raw is None:
+                for _k in value_keys:
+                    if _k in row and row[_k] is not None:
+                        v_raw = row[_k]
+                        break
+            if v_raw is None:
+                # 第一个非 token 字段的数字
+                for _k, _v in row.items():
+                    if _k == token_path or (_k in token_keys and _k != token_path):
+                        continue
+                    if isinstance(_v, (int, float)) and not isinstance(_v, bool):
+                        v_raw = _v
+                        break
+            if v_raw is not None:
+                try:
+                    val = int(v_raw)
+                except (ValueError, TypeError):
+                    try:
+                        val = int(float(v_raw))
+                    except (ValueError, TypeError):
+                        raise ValueError(f"value 必须为整数: '{v_raw}' (token='{tok}')")
+            items.append(std)
+            original_items.append(tok)
+            values.append(val)
+        return items, original_items, values
+
     @classmethod
     def add_upload(cls, group_id, username, items, **kwargs):
         """PSI-Sum: items + values,必须等长
@@ -106,7 +214,9 @@ class PSISumGroupManager(BaseGroupManager):
                     'original_items': kwargs.get('original_items') or items,
                     'values': values,
                     'has_values': values is not None,
-                    'value_count': len(values) if values is not None else 0,
+                    # 2026-08-02: value_count 改为非 0 value 数 (纯 token 文件不再提示
+                    # “未传 value”, 前端只在有真实 value 时显示 +N 个 value)
+                    'value_count': sum(1 for v in values if v != 0) if values is not None else 0,
                     'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     'count': len(items),
                 })

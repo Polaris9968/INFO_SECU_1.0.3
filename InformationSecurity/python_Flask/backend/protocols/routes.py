@@ -676,9 +676,17 @@ def _generic_upload_handler(spec: ProtocolSpec):
         try:
             # 2026-07-31 Friday: PSI-Sum 走专用 parser (CSV `token,value`), 其他协议走 extract_items_from_file
             if spec.protocol_id == 'psi_sum' and values_from_main:
-                # PSI-Sum 单文件 CSV mode: parse_csv_with_values
                 from .psi_sum import PSISumGroupManager
-                items, original_items, parsed_values = PSISumGroupManager.parse_csv_with_values(content, mode)
+                if is_json:
+                    # 2026-08-02: JSON 走专用 parser (v1.1.3 的版本丢失后重建)
+                    # 自动探测 token/value 字段, 显式 override 用 form 的 tokenPath / valuePath
+                    token_path = request.form.get('tokenPath', '').strip() or None
+                    value_path = request.form.get('valuePath', '').strip() or None
+                    items, original_items, parsed_values = PSISumGroupManager.parse_json_with_values(
+                        content, mode, token_path=token_path, value_path=value_path)
+                else:
+                    # PSI-Sum 单文件 CSV mode: parse_csv_with_values
+                    items, original_items, parsed_values = PSISumGroupManager.parse_csv_with_values(content, mode)
                 if not values:
                     values = parsed_values  # 仅当用户没传独立 valueFile 时, 用主 file 解析的 values
             else:
@@ -745,11 +753,16 @@ def _generic_upload_handler(spec: ProtocolSpec):
                                              standardize_mode=mode)
             msg = '上传成功' if ok else '上传失败'
         if ok:
-            return jsonify({
+            resp = {
                 'success': True, 'message': msg,
                 'count': len(items), 'mode': mode,
                 'group_id': group_id, 'filename': file.filename
-            })
+            }
+            # 2026-08-02 fix: 上传响应补 value_count (前端提示 +N 个 value 依赖它,
+            # 之前没返回 → 前端读 undefined 永远显示“(未传 value)”)
+            if spec.protocol_id == 'psi_sum':
+                resp['value_count'] = sum(1 for v in (values or []) if v != 0)
+            return jsonify(resp)
         return jsonify({'error': msg if isinstance(msg, str) else '上传失败'}), 400
     except Exception as e:
         return jsonify({'error': f'上传文件失败:{str(e)}'}), 500
@@ -1003,9 +1016,20 @@ def _make_download_result_handler(spec: ProtocolSpec):
             # 2026-08-02 E2E fix: 补 username(原代码 psi_sum 分支引用未定义变量 → 500)
             username = _get_username_or_login(spec)[0]
             if spec.protocol_id == 'psi_sum':
-                group = spec.manager_cls.get_group(group_id)
-                if group:
-                    fname = 'cardinality.txt' if username == group.get('creator') else 'sum.txt'
+                # 2026-08-02 哥反馈: 下载当前结果双方都要有基数和求和 → 合并一个文件
+                cardinality_path = os.path.join(data_dir, 'cardinality.txt')
+                sum_path = os.path.join(data_dir, 'sum.txt')
+                if not os.path.exists(cardinality_path) or not os.path.exists(sum_path):
+                    return jsonify({'error': '结果文件不存在(请先完成运算)'}), 404
+                with open(cardinality_path, 'r', encoding='utf-8') as _f:
+                    _card = _f.read().strip()
+                with open(sum_path, 'r', encoding='utf-8') as _f:
+                    _sum = _f.read().strip()
+                _content = f"交集基数: {_card}\n求和: {_sum}\n"
+                import io as _io
+                return send_file(_io.BytesIO(_content.encode('utf-8')),
+                                 as_attachment=True,
+                                 download_name='psi_sum_result.txt')
             if not fname:
                 return jsonify({'error': '该协议不支持 download-result'}), 400
             fpath = os.path.join(data_dir, fname)

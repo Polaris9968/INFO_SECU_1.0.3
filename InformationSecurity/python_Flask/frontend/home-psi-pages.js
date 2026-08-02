@@ -3029,8 +3029,10 @@ window.PSI_SUM = (function() {
             if (result.success) {
                 const d = result.data;
                 statusEl.style.color = '#5a8a3a';
+                // 2026-08-02 哥反馈: “(未传 value)”提示删掉 — 单文件模式 value 可选,
+                // 有真实 value 才显示 +N 个 value
                 statusEl.textContent = `✓ ${setFile.name} (${d.count} 个元素)`
-                    + (d.value_count > 0 ? ` + ${d.value_count} 个 value` : ' (未传 value)');
+                    + (d.value_count > 0 ? ` + ${d.value_count} 个 value` : '');
                 const detail = await loadGroupDetail(currentGroupId);
                 if (detail) {
                     currentGroupDetail = detail;
