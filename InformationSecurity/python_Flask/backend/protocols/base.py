@@ -409,9 +409,20 @@ class BaseGroupManager:
             except Exception:
                 key = key_fn()
 
-            fpath = archive_files.get(key)
-            if not fpath or not os.path.exists(fpath):
-                return None, f"文件不存在(key={key})"
+            # 2026-08-02: key_fn 返回 tuple → 合并多个归档文件 (PSI-Sum result_both 基数+求和)
+            keys = key if isinstance(key, (tuple, list)) else [key]
+            merged = []
+            for _k in keys:
+                fpath = archive_files.get(_k)
+                if not fpath or not os.path.exists(fpath):
+                    return None, f"文件不存在(key={_k})"
+                with open(fpath, 'r', encoding='utf-8') as _f:
+                    merged.append(_f.read().rstrip('\n'))
+            if len(keys) > 1:
+                import io as _io
+                _content = '\n'.join(merged) + '\n'
+                _tmp = _io.BytesIO(_content.encode('utf-8'))
+                return _tmp, None
             return fpath, None
 
         return None, f"未知文件类型:{file_type}"

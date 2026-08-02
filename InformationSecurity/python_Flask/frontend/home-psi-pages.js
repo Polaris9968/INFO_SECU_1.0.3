@@ -3209,8 +3209,7 @@ window.PSI_SUM = (function() {
                     const resultInfo = r.result || {};
                     const dur = r.computation_human ? `⏱ ${r.computation_human}` : '';
                     const showMyValue = myRole === 'sender';
-                    const showSum = myRole === 'sender';
-                    const showCardinality = myRole === 'receiver';
+                    // 2026-08-02 哥要求: 结果下载统一成“基数+求和”(双方都能下), 不再按角色分基数/求和
                     return `
                         <div class="round-item">
                             <div class="round-header">
@@ -3220,14 +3219,14 @@ window.PSI_SUM = (function() {
                             <div class="round-body">
                                 <span>我的集合：<strong>${r.my_upload_count}</strong> 个</span>
                                 ${showMyValue ? `<span style="margin-left: 20px;">我的 value: <strong>${r.my_value_count}</strong> 个</span>` : ''}
-                                ${showCardinality ? `<span style="margin-left: 20px;">交集基数：<strong>${resultInfo.cardinality ?? '-'}</strong></span>` : ''}
-                                ${showSum ? `<span style="margin-left: 20px;">求和：<strong>${resultInfo.sum ?? '-'}</strong></span>` : ''}
+                                <span style="margin-left: 20px;">交集基数：<strong>${resultInfo.cardinality ?? '-'}</strong></span>
+                                <span style="margin-left: 20px;">求和：<strong>${resultInfo.sum ?? '-'}</strong></span>
                             </div>
                             <div class="round-actions">
                                 <button class="btn btn-primary" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'my_plaintext')">📥 我的明文</button>
+                                <button class="btn btn-primary" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'my_ciphertext')">📥 我的密文</button>
                                 ${showMyValue ? `<button class="btn btn-primary" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'my_value')">📥 我的 value</button>` : ''}
-                                ${showCardinality ? `<button class="btn btn-success" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'result_cardinality')">📥 基数</button>` : ''}
-                                ${showSum ? `<button class="btn btn-success" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'result_sum')">📥 求和</button>` : ''}
+                                <button class="btn btn-success" onclick="PSI_SUM.downloadRoundFile(${r.round}, 'result_both')">📥 结果(基数+求和)</button>
                             </div>
                         </div>
                     `;
@@ -3509,6 +3508,7 @@ window.SS_PSI = (function() {
                             </div>
                             <div class="round-actions">
                                 <button class="btn btn-primary" onclick="SS_PSI.downloadRoundFile(${r.round}, 'my_plaintext')">📥 我的明文</button>
+                                <button class="btn btn-primary" onclick="SS_PSI.downloadRoundFile(${r.round}, 'my_ciphertext')">📥 我的密文</button>
                                 <button class="btn btn-success" onclick="SS_PSI.downloadRoundFile(${r.round}, 'my_share')">📥 我的份额</button>
                             </div>
                         </div>
@@ -3656,6 +3656,8 @@ window.SS_PSI = (function() {
             document.getElementById('ssPsiDurationStat').textContent = result.duration_human;
             document.getElementById('ssPsiDurationStatItem').style.display = 'block';
         }
+        // 2026-08-02 哥要求: 加部分密文展示
+        loadSSPsiCiphertextPreview();
         const btn = document.getElementById('ssPsiStartBtn');
         if (btn) { btn.disabled = true; btn.textContent = '✓ 已完成'; }
         // 隐藏触发运算卡的提示文本(已运算)
@@ -3663,6 +3665,30 @@ window.SS_PSI = (function() {
         if (startCard && result.computed_at) {
             const p = startCard.querySelector('p');
             if (p) p.textContent = `✓ 已于 ${result.computed_at} 完成 (by ${result.computed_by || 'sPSO'}) - SPIKE 6 秘密共享`;
+        }
+    }
+
+    // 2026-08-02 哥要求: SS-PSI 部分密文展示 (preview-ciphertext)
+    async function loadSSPsiCiphertextPreview() {
+        if (!currentGroupId) return;
+        try {
+            const token = sessionStorage.getItem('token') || localStorage.getItem('jwt_token') || '';
+            const r = await fetch(`/api/ss-psi-groups/${currentGroupId}/preview-ciphertext`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!r.ok) return;
+            const d = await r.json();
+            const ct = d.preview || [];
+            const total = d.count || 0;
+            const el = document.getElementById('ssPsiCiphertextPreview');
+            const container = document.getElementById('ssPsiCiphertextPreviewContainer');
+            if (!el || !container) return;
+            if (ct.length === 0) { container.style.display = 'none'; return; }
+            el.textContent = ct.map((line, i) => `${i + 1}. ${line}`).join('\n')
+                + (total > 20 ? `\n... 合计 ${total} 个密文` : '');
+            container.style.display = 'block';
+        } catch (e) {
+            console.warn('加载 SS-PSI 密文预览失败:', e);
         }
     }
 

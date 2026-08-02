@@ -18,14 +18,17 @@ class PSISumGroupManager(BaseGroupManager):
         'original_receiver.txt', 'original_sender.txt',
         'value_receiver.txt', 'value_sender.txt',
         'cardinality.txt', 'sum.txt',
-        
+        # 2026-08-02 哥要求: 历史加“我的密文”下载
+        'receiver_ciphertext.txt', 'sender_ciphertext.txt',
     )
     stale_filenames = (
         'receiver.txt', 'sender.txt',
         'original_receiver.txt', 'original_sender.txt',
         'value_receiver.txt', 'value_sender.txt',
         'cardinality.txt', 'sum.txt',
-        
+        # 2026-08-02: ciphertext/OPRF 归档后也删 (下一轮密文预览不残留)
+        'receiver_ciphertext.txt', 'sender_ciphertext.txt',
+        'oprf_prf_recver.txt', 'oprf_prf_sender.txt',
     )
 
     generate_with_original = False  # PSI-Sum 不生成 _with_original
@@ -33,8 +36,12 @@ class PSISumGroupManager(BaseGroupManager):
     file_type_map = {
         'my_plaintext':       lambda role, **kw: f'original_{role}',
         'my_value':           lambda role, **kw: f'value_{role}',
+        # 2026-08-02 哥要求: 历史加“我的密文”下载
+        'my_ciphertext':      lambda role, **kw: f'{role}_ciphertext',
         'result_cardinality': lambda role, **kw: 'cardinality',
         'result_sum':         lambda role, **kw: 'sum',
+        # 2026-08-02 哥要求: 历史结果下载统一“基数+求和” (tuple → get_round_data 合并)
+        'result_both':        lambda role, **kw: ('cardinality', 'sum'),
         # PSI-Sum 不支持 my_ciphertext
     }
 

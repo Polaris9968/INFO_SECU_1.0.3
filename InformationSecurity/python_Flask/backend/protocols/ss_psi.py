@@ -47,6 +47,8 @@ class SSPSIGroupManager(BaseGroupManager):
         'party1.txt', 'party2.txt',
         'original_party1.txt', 'original_party2.txt',
         'share_sender.txt', 'share_receiver.txt',
+        # 2026-08-02 哥要求: 历史加“我的密文”下载 → ciphertext 也归档
+        'receiver_ciphertext.txt', 'sender_ciphertext.txt',
         'intersection.txt',  # 旧 mock 时代残余,保险归档
     )
     # SS-PSI 历史下载 file_type 映射 (2026-07-31 哥要 UI 历史记录)
@@ -57,6 +59,8 @@ class SSPSIGroupManager(BaseGroupManager):
         'my_share':           lambda role, **kw: 'share_receiver' if role == 'receiver' else 'share_sender',
         # 双方原始明文(PSI 协议都支持)
         'my_plaintext':       lambda role, **kw: 'original_party1' if role == 'receiver' else 'original_party2',
+        # 2026-08-02 哥要求: 历史加“我的密文”下载
+        'my_ciphertext':      lambda role, **kw: 'receiver_ciphertext' if role == 'receiver' else 'sender_ciphertext',
         # 基数结果(实际从 result 字段返回,不下载文件)
         'result_cardinality': None,  # 不支持文件下载,前端从 r.result.cardinality_hint 读
     }
@@ -92,6 +96,8 @@ class SSPSIGroupManager(BaseGroupManager):
         'party1.txt', 'party2.txt',
         'original_party1.txt', 'original_party2.txt',
         'share_sender.txt', 'share_receiver.txt',
+        'receiver_ciphertext.txt', 'sender_ciphertext.txt',
+        'oprf_prf_recver.txt', 'oprf_prf_sender.txt',
         'intersection.txt',
     )
     upload_filenames_to_clear = ('uploaded_party1', 'uploaded_party2')
@@ -178,7 +184,8 @@ class SpsoSSPSI(BaseRunner):
 
         # spso_runner --mode ss_psi --input-dir <data_dir>
         # 注意:SS-PSI 模式输出 share 文件到 input_dir,不需要 --output-file
-        cmd = [SPSO_RUNNER, '--mode', 'ss_psi', '--input-dir', data_dir]
+        # 2026-08-02: 加 --dump-dir (SPIKE 5 demo 妥协, 密文预览用)
+        cmd = [SPSO_RUNNER, '--mode', 'ss_psi', '--input-dir', data_dir, '--dump-dir', data_dir]
 
         import sys as _sys
         print(f"[{cls.log_tag}] SPIKE-6 exec: {' '.join(cmd)}", file=_sys.stderr, flush=True)
@@ -195,6 +202,19 @@ class SpsoSSPSI(BaseRunner):
         if result.returncode != 0:
             err_text = result.stderr[:2000] if result.stderr else 'unknown error'
             return {'success': False, 'error': f'sPSO 失败 (rc={result.returncode}): {err_text}'}
+
+        # 2026-08-02 哥要求: SS-PSI 加部分密文展示 → 把 OPRF dump 复制成
+        # {role}_ciphertext.txt (preview-ciphertext / 历史 my_ciphertext 共用)
+        try:
+            for src_name, dst_name in (('oprf_prf_recver.txt', 'receiver_ciphertext.txt'),
+                                       ('oprf_prf_sender.txt', 'sender_ciphertext.txt')):
+                src_path = os.path.join(data_dir, src_name)
+                dst_path = os.path.join(data_dir, dst_name)
+                if os.path.exists(src_path):
+                    with open(src_path, 'rb') as sf, open(dst_path, 'wb') as df:
+                        df.write(sf.read())
+        except Exception as e:
+            print(f'[SpsoSSPSI] ciphertext 兼容文件同步跳过: {e}')
 
         # 读 share_sender.txt + share_receiver.txt
         share_sender_path = os.path.join(data_dir, 'share_sender.txt')

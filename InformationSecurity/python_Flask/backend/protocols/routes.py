@@ -969,6 +969,10 @@ def _make_round_download_handler(spec: ProtocolSpec):
             fpath, err = spec.manager_cls.get_round_data(group_id, round_num, file_type, username)
             if not fpath:
                 return jsonify({'error': err}), 404
+            # 2026-08-02: get_round_data 可能返回 BytesIO (PSI-Sum result_both 合并文件)
+            if hasattr(fpath, 'read'):
+                return send_file(fpath, as_attachment=True,
+                                 download_name=f'{spec.protocol_id}_round{round_num}_{file_type}.txt')
             return send_file(fpath, as_attachment=True)
         except Exception as e:
             return jsonify({'error': str(e)}), 500
