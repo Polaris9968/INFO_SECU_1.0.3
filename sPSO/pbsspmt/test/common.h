@@ -155,6 +155,17 @@ inline void print_set_hex(const Container& c, const std::string& label, int per_
 //   `p`, `q`    : payload modulus and sum modulus. Pass 0 to take
 //                 DEFAULT_PAYLOAD_P / DEFAULT_PAYLOAD_Q. Precondition: q > n · p.
 //
+// SPIKE 2 — input sets (optional):
+//   `sender_set_in` / `recver_set_in`: when non-null, use these uint64 vectors
+//                 as protocol input (skipping `set_gen`). Sizes must match
+//                 and equal to each other (single n drives cuckoo sizing).
+//                 When provided, run_pso ALSO dumps the recovered PSI
+//                 intersection (one uint64 hex per line, between
+//                 `=== INTERSECTION_START ===` / `=== INTERSECTION_END ===`
+//                 markers) to stdout, regardless of print_sets / n size.
+//                 This is the contract spso_runner.cpp parses to recover
+//                 the real intersection elements.
+//
 // Throws on protocol error or precondition violation. Prints timing / comm
 // stats to stdout.
 // ============================================================
@@ -162,4 +173,12 @@ void run_pso(PSOMode mode,
              bool print_sets = false,
              std::vector<uint64_t> payload = {},
              uint64_t p = DEFAULT_PAYLOAD_P,
-             uint64_t q = DEFAULT_PAYLOAD_Q);
+             uint64_t q = DEFAULT_PAYLOAD_Q,
+             const std::vector<uint64_t>* sender_set_in = nullptr,
+             const std::vector<uint64_t>* recver_set_in = nullptr,
+             // 2026-07-30 Friday fix: SS-PSI mode 输出两份额
+             // out_ss_share_sender[i] = block[2*8B hex] 接收方最后的份额 z_i
+             // out_ss_share_receiver[i] = block[2*8B hex] 发送方最后的份额 r_i
+             // 仅当 mode == MODE_SS_PSI 且 out 参数非 nullptr 时填充
+             std::vector<std::string>* out_ss_share_sender = nullptr,
+             std::vector<std::string>* out_ss_share_receiver = nullptr);
