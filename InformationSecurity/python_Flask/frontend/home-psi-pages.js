@@ -2929,6 +2929,8 @@ window.PSI_SUM = (function() {
         // 结果展示
         if (detail.cardinality_result !== null && detail.cardinality_result !== undefined) {
             renderResult(detail);
+            // 2026-08-02 哥要求: 加部分密文展示 (跟 PSI/PSU 对齐)
+            loadPsiSumCiphertextPreview();
         }
 
         // 2026-07-31 Friday: 刷新历史记录 tab (跟 PSI_INT 对齐, polling 后自动显示历史 tab)
@@ -2955,6 +2957,33 @@ window.PSI_SUM = (function() {
             return v !== undefined && v !== null ? `${tok},${v}` : tok;
         });
         origEl.textContent = lines.join('\n') + (myOrigFull > 20 ? `\n... (共 ${myOrigFull} 项, 仅显示前 20)` : '');
+    }
+
+    // 2026-08-02 哥要求: 部分密文展示 (跟 PSI/PSU 对齐)
+    async function loadPsiSumCiphertextPreview() {
+        if (!currentGroupId) return;
+        try {
+            const token = sessionStorage.getItem('token') || localStorage.getItem('jwt_token') || '';
+            const r = await fetch(`/api/psi-sum-group/${currentGroupId}/preview-ciphertext`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!r.ok) return;
+            const d = await r.json();
+            const ct = d.preview || [];
+            const total = d.count || 0;
+            const el = $('psiSumCiphertext');
+            const container = $('psiSumCiphertextContainer');
+            if (!el || !container) return;
+            if (ct.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            el.textContent = ct.map((line, i) => `${i + 1}. ${line}`).join('\n')
+                + (total > 20 ? `\n... 合计 ${total} 个密文` : '');
+            container.style.display = 'block';
+        } catch (e) {
+            console.warn('加载 PSI-Sum 密文预览失败:', e);
+        }
     }
 
     function renderResult(detail) {
