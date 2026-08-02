@@ -4169,20 +4169,7 @@ body > .sidebar {
                         <button class="btn btn-success hidden" id="psiSumStartBtn" onclick="PSI_SUM.start()" style="margin-top: 10px;">▶ 开始隐私求和</button>
                     </div>
 
-                    <!-- 预览卡(上传或运算后显示) -->
-                    <div class="card" id="psiSumPreviewCard" style="display:none;">
-                        <h2>📄 己方明文前 20 个</h2>
-                        <p style="font-size: 12px; color: #666;">格式: <code>token,value</code> (value 可选, receiver 端无 value)</p>
-                        <div class="result-container">
-                            <pre id="psiSumPlaintext">等待上传后显示...</pre>
-                        </div>
-                        <div class="result-container" id="psiSumCiphertextContainer" style="display:none; margin-top: 12px;">
-                            <h3 style="font-size: 14px; color: #555; margin-bottom: 6px;">🔒 己方密文前 20 个</h3>
-                            <pre id="psiSumCiphertext"></pre>
-                        </div>
-                    </div>
-
-                    <!-- 隐私求和结果卡 -->
+                    <!-- 隐私求和结果卡 (对齐 PSU: 统计 + 明文 + 密文 + 下载) -->
                     <div class="card" id="psiSumResultCard" style="display:none;">
                         <div class="psi-stats">
                             <div class="psi-stat-item">
@@ -4206,11 +4193,23 @@ body > .sidebar {
                                 <div class="psi-stat-value" id="psiSumDuration">—</div>
                             </div>
                         </div>
+
+                        <!-- 明文 / 密文 (2026-08-02 对齐 PSU: 从独立预览卡移入结果卡) -->
+                        <div class="result-container" id="psiSumPlaintextContainer" style="display:none;">
+                            <h3>📄 己方明文前 20 个</h3>
+                            <pre id="psiSumPlaintext">等待上传后显示...</pre>
+                        </div>
+                        <div class="result-container" id="psiSumCiphertextContainer" style="display:none;">
+                            <h3>🔒 己方密文前 20 个</h3>
+                            <pre id="psiSumCiphertext"></pre>
+                        </div>
+
                         <p style="color: #666; font-size: 13px; margin-top: 10px;">
                             💡 下载结果包含交集基数与求和(双方一致)
                         </p>
                         <!-- 2026-08-01 Friday v1.1.4: PSI-Sum 下载当前结果按钮 (按角色返回不同文件) -->
                         <button class="btn btn-primary" id="psiSumDownloadBtn" style="display:none; margin-top: 10px;" onclick="PSI_SUM.downloadResult()">📥 下载当前结果(基数+求和)</button>
+                        <h2 style="margin-top: 20px;">🎯 隐私求和结果</h2>
                     </div>
 
                     <!-- 操作按钮卡(集中所有按钮) -->

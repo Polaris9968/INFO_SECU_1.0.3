@@ -2938,19 +2938,22 @@ window.PSI_SUM = (function() {
     }
 
     function renderPreview(detail, username) {
-        // 2026-07-31 Friday: 合并 token+value 单 pre 显示 (CSV `token,value`)
-        const previewCard = $('psiSumPreviewCard');
+        // 2026-08-02 对齐 PSU: 明文展示移入结果卡 (psiSumPlaintextContainer)
+        const container = $('psiSumPlaintextContainer');
         const origEl = $('psiSumPlaintext');
-        if (!previewCard || !origEl) return;
+        if (!container || !origEl) return;
         const myOrig = detail.my_original_preview || [];
         const myVal = detail.my_values_preview || [];
         const myOrigFull = detail.my_original_full_count || 0;
 
         if (myOrig.length === 0) {
-            previewCard.style.display = 'none';
+            container.style.display = 'none';
             return;
         }
-        previewCard.style.display = 'block';
+        container.style.display = 'block';
+        // 上传后明文可见 → 结果卡也显示 (统计数字运算后才有)
+        const resultCard = $('psiSumResultCard');
+        if (resultCard) resultCard.style.display = 'block';
         // 合并显示 token,value (receiver 端 myVal 为空, 因为 value 被忽略)
         const lines = myOrig.map((tok, i) => {
             const v = myVal[i];
