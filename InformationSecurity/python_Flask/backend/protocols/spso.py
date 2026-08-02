@@ -111,6 +111,21 @@ def _run_spso_mode(group_id, data_dir_attr, spso_mode,
     except Exception as e:
         return {'success': False, 'error': f'解析结果失败: {e}'}
 
+    # 2026-08-02 E2E fix: sPSO dump 的是 oprf_prf_{recver,sender}.txt (spike5 demo),
+    # 但前端 preview-ciphertext / 历史下载 my_oprf 读 {role}_ciphertext.txt (Kunlun 习惯)。
+    # 这里复制一份保持兼容,否则“我的密文”下载永远 404。
+    try:
+        for src_name, dst_name in (('oprf_prf_recver.txt', 'receiver_ciphertext.txt'),
+                                   ('oprf_prf_sender.txt', 'sender_ciphertext.txt')):
+            src_path = os.path.join(data_dir, src_name)
+            dst_path = os.path.join(data_dir, dst_name)
+            if os.path.exists(src_path):
+                with open(src_path, 'rb') as sf, open(dst_path, 'wb') as df:
+                    df.write(sf.read())
+    except Exception as e:
+        # 非致命: ciphertext 兼容文件同步失败不阻断主流程
+        print(f"[spso] ciphertext 兼容文件同步跳过: {e}")
+
     parsed['success'] = True
     return parsed
 
@@ -341,7 +356,7 @@ class SpsoPSISum(BaseRunner):
 
     协议:
       - alice (creator = receiver) 提供 receiver.txt (her set)
-      - bob (sender) 提供 sender.txt (his set) + value_sender.txt (per-item 加权)
+      - bob (sender) 提供 sender.txt (his set) + value_sender.txt (per-item 加权) → 2026-08-02 实际文件 value_sender.txt
       - sum = Σ sender_value[i] for i where sender_set[i] ∈ recver_set, mod q
       - receiver (alice) 学会这个 sum; sender (bob) 不知道 sum
 
@@ -370,9 +385,8 @@ class SpsoPSISum(BaseRunner):
             return {'success': False, 'error': f'读 Config 失败: {e}'}
 
         # 读 sender_values (bob 的 values) — 必须等于 sender.txt 的行数
-        # Friday 22:42 fix: upload handler 写的是 sender_value.txt (Kunlun 习惯),
-        # 不是 value_sender.txt
-        sender_values_path = os.path.join(data_dir, 'sender_value.txt')
+        # 2026-08-02 E2E fix: 上传/归档统一用 value_{role}.txt (原来 sender_value.txt)
+        sender_values_path = os.path.join(data_dir, 'value_sender.txt')
         sender_values = []
         try:
             with open(sender_values_path, 'r', encoding='utf-8') as f:

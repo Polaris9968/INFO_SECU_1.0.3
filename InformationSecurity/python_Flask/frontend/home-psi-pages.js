@@ -1251,8 +1251,16 @@ async function refreshCurrentPSIMatchGroup() {
                 uploadedMyMatchFile = false;
             }
 
-            document.getElementById("myMatchElementsCount").innerText = myUpload ? myUpload.count : "0";
-            document.getElementById("otherMatchElementsCount").innerText = otherUpload ? otherUpload.count : "0";
+            // 2026-08-02 E2E fix: 优先读 subset_result 里的元素数快照,
+            // finalize 后 uploads 清空, 直接读 myUpload.count 会变 0
+            const myCount = (subsetResult && subsetResult.myCount !== undefined)
+                ? subsetResult.myCount
+                : (myUpload ? myUpload.count : "0");
+            const otherCount = (subsetResult && subsetResult.otherCount !== undefined)
+                ? subsetResult.otherCount
+                : (otherUpload ? otherUpload.count : "0");
+            document.getElementById("myMatchElementsCount").innerText = myCount;
+            document.getElementById("otherMatchElementsCount").innerText = otherCount;
 
             // 己方明文前 20（上传后始终显示）— 2026-07-01:优先用 original_items
             if (myUpload && (myUpload.original_items || myUpload.items)) {

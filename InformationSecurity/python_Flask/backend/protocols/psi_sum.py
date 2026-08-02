@@ -18,14 +18,14 @@ class PSISumGroupManager(BaseGroupManager):
         'original_receiver.txt', 'original_sender.txt',
         'value_receiver.txt', 'value_sender.txt',
         'cardinality.txt', 'sum.txt',
-        'sender_value.txt',
+        
     )
     stale_filenames = (
         'receiver.txt', 'sender.txt',
         'original_receiver.txt', 'original_sender.txt',
         'value_receiver.txt', 'value_sender.txt',
         'cardinality.txt', 'sum.txt',
-        'sender_value.txt',
+        
     )
 
     generate_with_original = False  # PSI-Sum 不生成 _with_original

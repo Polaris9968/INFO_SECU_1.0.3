@@ -421,9 +421,8 @@ def _psi_sum_get_extras(group, username):
 
     my_original_preview, my_original_full_count = _read_first_n(
         os.path.join(kunlun_dir, f"original_{role}.txt"))
-    # 2026-08-01 Friday v1.1.4 Bug #1 fix: 读 {role}_value.txt (跟 upload 写 + SpsoPSISum.run 读对齐)
     my_values_preview, my_values_full_count = _read_first_n(
-        os.path.join(kunlun_dir, f"{role}_value.txt"))
+        os.path.join(kunlun_dir, f"value_{role}.txt"))  # v1.1.4 Bug#1 / 2026-08-02 统一命名
     my_ciphertext_preview, my_ciphertext_full_count = _read_first_n(
         os.path.join(kunlun_dir, f"{role}_ciphertext.txt"))
 
@@ -726,9 +725,11 @@ def _generic_upload_handler(spec: ProtocolSpec):
         with open(uploaded_path, 'wb') as f:
             f.write(content.encode('utf-8'))
 
-        # PSI-Sum: 额外写 values 到 {role}_value.txt(Kunlun 二进制读这个)
+        # PSI-Sum: 额外写 values 到 value_{role}.txt(spso_runner 读这个)
+        # 2026-08-02 E2E fix: 原来写 {role}_value.txt 与 archive_filenames / file_type_map
+        # 的 value_{role} 命名不一致 → 历史下载 my_value 404
         if spec.protocol_id == 'psi_sum' and values is not None:
-            values_path = _os.path.join(kunlun_dir, f"{role}_value.txt")
+            values_path = _os.path.join(kunlun_dir, f"value_{role}.txt")
             with open(values_path, 'w', encoding='utf-8') as f:
                 for v in values:
                     f.write(f'{v}\n')
@@ -814,13 +815,18 @@ def _make_start_computation_handler(spec: ProtocolSpec):
             for g in data['groups']:
                 if g['id'] == group_id:
                     # PSIMatch: 直接存 subset_result(SPIKE 3.5 fix: 含 is_subset / missing_count / matched_alice)
+                    # 2026-08-02 E2E fix: 存双方元素数快照 — 前端结果卡读它,
+                    # 否则 finalize 后 uploads 清空 → 结果卡“我的/对方元素数”变 0
                     if spec.protocol_id == 'psi_match':
+                        uploads_by_user = {u['username']: u for u in g.get('uploads', [])}
                         g['subset_result'] = {
                             'cardinality': result.get('cardinality', 0),
                             'is_subset': result.get('is_subset', False),
                             'missing_count': result.get('missing_count', 0),
                             'matched_alice': result.get('matched_alice', []),
                             'matched_count': result.get('matched_count', 0),
+                            'my_count': uploads_by_user.get(username, {}).get('count', 0),
+                            'other_count': next((u.get('count', 0) for u in g.get('uploads', []) if u['username'] != username), 0),
                         }
                     g['pending_computation'] = {
                         'duration_seconds': result.get('duration_seconds'),
@@ -904,9 +910,7 @@ def _make_finalize_round_handler(spec: ProtocolSpec):
                 return jsonify({'error': '小组不存在'}), 404
             if username not in group['members']:
                 return jsonify({'error': '你不是该小组成员'}), 403
-            # 2026-08-01 Friday v1.1.4: SS-PSI 放宽为双方都能归档 (2-party 设计, 不需要 receiver-only)
-            # 其他协议 (PSI/PSI-Match/PSI-Sum/PSU) 仍限制 creator-only
-            if spec.protocol_id != 'ss_psi' and username != group['creator']:
+            if spec.protocol_id != 'ss_psi' and username != group['creator']:  # v1.1.4 Bug#7
                 return jsonify({'error': '只有组长可以归档当前轮'}), 403
             ok, result = spec.manager_cls.finalize_round(group_id, username)
             if ok:
@@ -943,7 +947,9 @@ def _make_round_download_handler(spec: ProtocolSpec):
         try:
             group_id = group_id.upper()
             username = _get_username_or_login(spec)[0]
-            file_type = request.args.get('file_type', 'result')
+            # 2026-08-02 E2E fix: 前端历史下载按钮传 ?type=(PSI/PSI-Match/PSI-Sum),
+            # 后端原来只读 ?file_type= → 非 result 类型全部 fallback 成 result 或 404
+            file_type = request.args.get('file_type') or request.args.get('type') or 'result'
             fpath, err = spec.manager_cls.get_round_data(group_id, round_num, file_type, username)
             if not fpath:
                 return jsonify({'error': err}), 404
@@ -982,34 +988,30 @@ def _make_download_result_handler(spec: ProtocolSpec):
         try:
             from app import Config
             group_id = group_id.upper()
-            username = _get_username_or_login(spec)[0]
             data_dir = os.path.join(getattr(Config, spec.upload_data_dir_attr), f"group_{group_id}")
             # 协议特定结果文件名
             fname_map = {
                 'psi': 'intersection.txt',
                 'psi_card': 'cardinality.txt',
                 'psu': 'union.txt',
+                # 2026-08-02 E2E fix: PSI-Match registry 已开 has_download_result,
+                # 但 fname_map 漏了它 → 400 "该协议不支持 download-result"
+                'psi_match': 'cardinality.txt',
             }
             fname = fname_map.get(spec.protocol_id)
-            # 2026-08-01 Friday v1.1.4: PSI-Sum 按 role 返不同文件 (receiver=cardinality, sender=sum)
+            # v1.1.4 Bug#2: PSI-Sum 按角色返回不同文件
+            # 2026-08-02 E2E fix: 补 username(原代码 psi_sum 分支引用未定义变量 → 500)
+            username = _get_username_or_login(spec)[0]
             if spec.protocol_id == 'psi_sum':
                 group = spec.manager_cls.get_group(group_id)
-                if not group:
-                    return jsonify({'error': '小组不存在'}), 404
-                is_receiver = username == group.get('creator')
-                fname = 'cardinality.txt' if is_receiver else 'sum.txt'
-                label = '基数' if is_receiver else '求和'
+                if group:
+                    fname = 'cardinality.txt' if username == group.get('creator') else 'sum.txt'
             if not fname:
                 return jsonify({'error': '该协议不支持 download-result'}), 400
             fpath = os.path.join(data_dir, fname)
             if not os.path.exists(fpath):
-                return jsonify({'error': '结果文件不存在 (可能尚未运算或未归档)'}), 404
-            # 2026-08-01 Friday v1.1.4: PSI-Sum 返原始文件名 + 中文 label
-            download_name = fname
-            if spec.protocol_id == 'psi_sum':
-                ext = fname.split('.')[-1]
-                download_name = f"psi_sum_{label}_{group_id}.{ext}"
-            return send_file(fpath, as_attachment=True, download_name=download_name)
+                return jsonify({'error': '结果文件不存在'}), 404
+            return send_file(fpath, as_attachment=True)
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return _auth_required(spec, handler)
