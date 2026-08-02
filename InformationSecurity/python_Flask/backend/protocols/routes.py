@@ -736,7 +736,8 @@ def _generic_upload_handler(spec: ProtocolSpec):
         # PSI-Sum: 额外写 values 到 value_{role}.txt(spso_runner 读这个)
         # 2026-08-02 E2E fix: 原来写 {role}_value.txt 与 archive_filenames / file_type_map
         # 的 value_{role} 命名不一致 → 历史下载 my_value 404
-        if spec.protocol_id == 'psi_sum' and values is not None:
+        # 2026-08-02 哥反馈: receiver(组长) 的 value 也被传上去了 → receiver 端不写 value 文件
+        if spec.protocol_id == 'psi_sum' and values is not None and role == 'sender':
             values_path = _os.path.join(kunlun_dir, f"value_{role}.txt")
             with open(values_path, 'w', encoding='utf-8') as f:
                 for v in values:
@@ -760,8 +761,10 @@ def _generic_upload_handler(spec: ProtocolSpec):
             }
             # 2026-08-02 fix: 上传响应补 value_count (前端提示 +N 个 value 依赖它,
             # 之前没返回 → 前端读 undefined 永远显示“(未传 value)”)
+            # receiver 端 value 强制忽略 → value_count 恒 0
             if spec.protocol_id == 'psi_sum':
-                resp['value_count'] = sum(1 for v in (values or []) if v != 0)
+                is_recv = (username == group['creator'])
+                resp['value_count'] = 0 if is_recv else sum(1 for v in (values or []) if v != 0)
             return jsonify(resp)
         return jsonify({'error': msg if isinstance(msg, str) else '上传失败'}), 400
     except Exception as e:

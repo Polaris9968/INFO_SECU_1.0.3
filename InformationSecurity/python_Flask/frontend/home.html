@@ -4139,20 +4139,21 @@ body > .sidebar {
 
                     <!-- 文件上传(集合 + value) -->
                     <div class="card">
-                        <h2>📁 上传集合 + 关联数值</h2>
-                        <p style="color: #666; margin-bottom: 10px;">集合文件每行一个元素（数字/文本均可），value 文件每行一个整数/小数（与集合行数一致）</p>
+                        <h2>📁 上传集合(含关联数值)</h2>
+                        <p style="color: #666; margin-bottom: 10px;">单文件, 每行 <code>token,value</code> (value 可选, 缺省为 0; 也支持 .json)</p>
                         
                         <div class="form-group">
                             <label>集合文件 (单文件, 每行 <code>token,value</code>) <span style="color:#999;">（必填）</span></label>
                             <div class="upload-area" onclick="document.getElementById('psiSumFile').click()">
-                                <input type="file" id="psiSumFile" accept=".txt,.csv" onchange="PSI_SUM.handleFileSelected(this)">
+                                <input type="file" id="psiSumFile" accept=".txt,.csv,.json" onchange="PSI_SUM.handleFileSelected(this)">
                                 <div class="upload-icon">📄</div>
-                                <div class="upload-text">点击选择文件 (.txt / .csv)</div>
+                                <div class="upload-text">点击选择 .txt / .csv / .json 文件或拖拽文件到此处</div>
                             </div>
                             <div style="font-size: 12px; color: #666; margin-top: 6px;">
                                 格式示例: <code>alice,100</code><br>
                                 - <code>alice,100</code> → token=alice, value=100<br>
                                 - <code>bob</code> → token=bob, value=0 (默认)<br>
+                                - JSON 支持 <code>[{"token":"alice","value":100}]</code> / <code>{"items":[...]}</code> / 纯 token 数组<br>
                                 - Receiver (组长) 端的 value <strong>会被忽略</strong>(只有 sender 提供 value, 隐私设计)
                             </div>
                         </div>
@@ -4202,7 +4203,7 @@ body > .sidebar {
                             </div>
                         </div>
                         <p style="color: #666; font-size: 13px; margin-top: 10px;">
-                            💡 Receiver 下载得到基数 (cardinality.txt), Sender 下载得到求和结果 (sum.txt)
+                            💡 下载结果包含交集基数与求和(双方一致)
                         </p>
                         <!-- 2026-08-01 Friday v1.1.4: PSI-Sum 下载当前结果按钮 (按角色返回不同文件) -->
                         <button class="btn btn-primary" id="psiSumDownloadBtn" style="display:none; margin-top: 10px;" onclick="PSI_SUM.downloadResult()">📥 下载当前结果(基数+求和)</button>
