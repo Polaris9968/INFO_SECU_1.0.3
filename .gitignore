@@ -69,3 +69,6 @@ CLAUDE_FOR_FRIDAY.md
 # 2026-07-08 本地 SPEC + 备份
 docs/
 backend/app.py.bak.*
+
+# spso_runner 编译产物(重编用 build_spso_runner.sh)
+spso_python/spso_runner
