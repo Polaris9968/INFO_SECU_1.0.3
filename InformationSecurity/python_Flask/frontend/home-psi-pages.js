@@ -1294,9 +1294,8 @@ async function refreshCurrentPSIMatchGroup() {
                 document.getElementById("psiMatchResultCard").style.display = 'block';
                 document.getElementById("matchResultContainer").style.display = 'block';
                 document.getElementById("matchCiphertextContainer").style.display = 'none';
-                // 2026-08-02 fix: 明文预览也清(下一轮后不残留上一轮明文)
-                document.getElementById("matchMyPlaintextContainer").style.display = 'none';
-                document.getElementById("matchMyPlaintext").innerText = '';
+                // 2026-08-05 Friday fix: 不再强制隐藏/清空明文 — 1265-1273 已根据 myUpload 正确处理
+                // (下一轮清残留由 saveAndStartNewRound 的 psiMatchResultCard=block + myUpload=null 共同完成)
                 document.getElementById("psiMatchDownloadBtn").style.display = 'none';
             }
 
