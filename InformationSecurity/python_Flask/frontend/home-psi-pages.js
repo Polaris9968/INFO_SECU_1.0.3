@@ -43,6 +43,7 @@ function startOfflinePrecomputation(prefix, groupId) {
     if (state.timer) { clearInterval(state.timer); state.timer = null; }
 
     const doneKey = `${prefix}OfflineDone_${groupId}`;
+    const startKey = `${prefix}OfflineStart_${groupId}`;
     const isDone = localStorage.getItem(doneKey) === '1';
 
     if (isDone) {
@@ -55,10 +56,28 @@ function startOfflinePrecomputation(prefix, groupId) {
     state.activeGroupId = groupId;
     runningArea.style.display = 'block';
     readyArea.style.display = 'none';
-    fill.style.width = '0%';
-    statusText.textContent = '⏳ 正在预计算 SEQT 关联与置换关联...';
 
-    const startTime = Date.now();
+    // 2026-08-10 fix: 刷新后进度重跑
+    // 用 localStorage.startKey 记住开始时间戳, 刷新后按 elapsed 续跑 (或 > 2.5s 直接跳 ready)
+    let startTime = parseInt(localStorage.getItem(startKey) || '0', 10);
+    if (!startTime) {
+        startTime = Date.now();
+        localStorage.setItem(startKey, String(startTime));
+    }
+
+    const elapsed0 = Date.now() - startTime;
+    if (elapsed0 >= PSI_OFFLINE_DURATION_MS) {
+        // 跨越刷新 + 没存 doneKey 但已超时: 视为已完成 (浏览器尾部掉电、tab 后台被挂起 等)
+        localStorage.setItem(doneKey, '1');
+        runningArea.style.display = 'none';
+        readyArea.style.display = 'block';
+        return;
+    }
+
+    const startPct = (elapsed0 / PSI_OFFLINE_DURATION_MS) * 100;
+    fill.style.width = startPct.toFixed(1) + '%';
+    statusText.textContent = `⏳ 正在预计算 SEQT 关联与置换关联... ${Math.floor(startPct)}%`;
+
     state.timer = setInterval(() => {
         const elapsed = Date.now() - startTime;
         const pct = Math.min(100, (elapsed / PSI_OFFLINE_DURATION_MS) * 100);
