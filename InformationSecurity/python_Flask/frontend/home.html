@@ -3589,6 +3589,25 @@ body > .sidebar {
                         <div class="status-text" id="progressText">等待成员上传文件...</div>
                     </div>
 
+                    <!-- 2026-08-09:离线预处理 (L1 - 纯前端 setTimeout 模拟,真实 crypto offline 见 1.2.0) -->
+                    <div class="card" id="psiOfflinePrecomputeCard">
+                        <h2>⚙️ 离线预处理</h2>
+                        <p style="color: #666; margin-bottom: 10px; font-size: 13px;">
+                            预计算 SEQT 关联与置换关联
+                        </p>
+                        <div id="psiOfflineRunningArea">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="psiOfflineProgressFill"></div>
+                            </div>
+                            <div class="status-text" id="psiOfflineStatusText">⏳ 正在预计算 SEQT 关联与置换关联...</div>
+                        </div>
+                        <div id="psiOfflineReadyArea" style="display:none;">
+                            <div style="color: #10b981; font-weight: 500; padding: 8px 0; font-size: 14px;">
+                                ✅ 离线准备就绪
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 文件上传 -->
                     <div class="card">
                         <h2>📁 上传文件</h2>
@@ -3775,6 +3794,25 @@ body > .sidebar {
                         <div class="status-text" id="psiMatchProgressText">等待成员上传文件...</div>
                     </div>
 
+                    <!-- 2026-08-09:PSI-Match 离线预处理 (L1 - 纯前端 setTimeout 模拟) -->
+                    <div class="card" id="psiMatchOfflinePrecomputeCard">
+                        <h2>⚙️ 离线预处理</h2>
+                        <p style="color: #666; margin-bottom: 10px; font-size: 13px;">
+                            预计算 SEQT 关联与置换关联
+                        </p>
+                        <div id="psiMatchOfflineRunningArea">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="psiMatchOfflineProgressFill"></div>
+                            </div>
+                            <div class="status-text" id="psiMatchOfflineStatusText">⏳ 正在预计算 SEQT 关联与置换关联...</div>
+                        </div>
+                        <div id="psiMatchOfflineReadyArea" style="display:none;">
+                            <div style="color: #10b981; font-weight: 500; padding: 8px 0; font-size: 14px;">
+                                ✅ 离线准备就绪
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card">
                         <h2> 上传文件</h2>
                         <p style="color: #666; margin-bottom: 10px;">支持整数、小数、字符串、中文，以空格、换行或逗号分隔</p>
@@ -3953,6 +3991,25 @@ body > .sidebar {
                             <div class="progress-fill" id="unionProgressFill"></div>
                         </div>
                         <div class="status-text" id="unionProgressText">等待成员上传文件...</div>
+                    </div>
+
+                    <!-- 2026-08-09:PSU(隐私求并) 离线预处理 (L1 - 纯前端 setTimeout 模拟) -->
+                    <div class="card" id="psiUnionOfflinePrecomputeCard">
+                        <h2>⚙️ 离线预处理</h2>
+                        <p style="color: #666; margin-bottom: 10px; font-size: 13px;">
+                            预计算 SEQT 关联与置换关联
+                        </p>
+                        <div id="psiUnionOfflineRunningArea">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="psiUnionOfflineProgressFill"></div>
+                            </div>
+                            <div class="status-text" id="psiUnionOfflineStatusText">⏳ 正在预计算 SEQT 关联与置换关联...</div>
+                        </div>
+                        <div id="psiUnionOfflineReadyArea" style="display:none;">
+                            <div style="color: #10b981; font-weight: 500; padding: 8px 0; font-size: 14px;">
+                                ✅ 离线准备就绪
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card">
@@ -4137,6 +4194,25 @@ body > .sidebar {
                         <div class="status-text" id="psiSumProgressText">等待对方加入...</div>
                     </div>
 
+                    <!-- 2026-08-09:PSI-Sum 离线预处理 (L1 - 纯前端 setTimeout 模拟) -->
+                    <div class="card" id="psiSumOfflinePrecomputeCard">
+                        <h2>⚙️ 离线预处理</h2>
+                        <p style="color: #666; margin-bottom: 10px; font-size: 13px;">
+                            预计算 SEQT 关联与置换关联
+                        </p>
+                        <div id="psiSumOfflineRunningArea">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="psiSumOfflineProgressFill"></div>
+                            </div>
+                            <div class="status-text" id="psiSumOfflineStatusText">⏳ 正在预计算 SEQT 关联与置换关联...</div>
+                        </div>
+                        <div id="psiSumOfflineReadyArea" style="display:none;">
+                            <div style="color: #10b981; font-weight: 500; padding: 8px 0; font-size: 14px;">
+                                ✅ 离线准备就绪
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 文件上传(集合 + value) -->
                     <div class="card">
                         <h2>📁 上传集合(含关联数值)</h2>
@@ -4307,6 +4383,25 @@ body > .sidebar {
                     <div class="status-text" id="ssPsiProgressText">等待其他参与方加入...</div>
                 </div>
 
+                <!-- 2026-08-09:SS-PSI 离线预处理 (L1 - 纯前端 setTimeout 模拟) -->
+                <div class="card" id="ssPsiOfflinePrecomputeCard">
+                    <h2>⚙️ 离线预处理</h2>
+                    <p style="color: #666; margin-bottom: 10px; font-size: 13px;">
+                        预计算 SEQT 关联与置换关联
+                    </p>
+                    <div id="ssPsiOfflineRunningArea">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="ssPsiOfflineProgressFill"></div>
+                        </div>
+                        <div class="status-text" id="ssPsiOfflineStatusText">⏳ 正在预计算 SEQT 关联与置换关联...</div>
+                    </div>
+                    <div id="ssPsiOfflineReadyArea" style="display:none;">
+                        <div style="color: #10b981; font-weight: 500; padding: 8px 0; font-size: 14px;">
+                            ✅ 离线准备就绪
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <h2>📁 上传文件</h2>
                     <p style="color: #666; margin-bottom: 10px;">支持整数、小数、文本，以空格、换行或逗号分隔</p>
@@ -4386,7 +4481,7 @@ body > .sidebar {
             </div><!-- /ssPsiView2 -->
 <script src="./api.js"></script>
 <script src="./home.js"></script>
-<script src="./home-psi-pages.js?v=1.1.4"></script>
+<script src="./home-psi-pages.js?v=1.1.6"></script>
 
 </body>
 </html>

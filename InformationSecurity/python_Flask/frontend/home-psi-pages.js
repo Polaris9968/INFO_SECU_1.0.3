@@ -15,6 +15,73 @@
 //     不会覆盖主页 home.js 的同名函数
 
 // ============================================================
+// 2026-08-09:通用离线预处理 (L1 - 纯前端 setTimeout 模拟) 5 协议共用
+// 必须在顶层定义,所有 IIFE (PSI_INT/PSI_MATCH/PSI_UNION/PSI_SUM/SS_PSI) 都能访问
+// 前缀:psi / psiMatch / psiUnion / psiSum / ssPsi
+// 触发:createXGroup / joinXGroup 成功后 start
+// 持久化:localStorage[`<prefix>OfflineDone_<group_id>`] = '1',刷新不重跑
+// ============================================================
+const PSI_OFFLINE_DURATION_MS = 2500;
+const offlineState = {}; // prefix -> { timer, activeGroupId }
+
+function startOfflinePrecomputation(prefix, groupId) {
+    if (!groupId) return;
+
+    const fill = document.getElementById(prefix + 'OfflineProgressFill');
+    const statusText = document.getElementById(prefix + 'OfflineStatusText');
+    const runningArea = document.getElementById(prefix + 'OfflineRunningArea');
+    const readyArea = document.getElementById(prefix + 'OfflineReadyArea');
+    if (!fill || !statusText || !runningArea || !readyArea) return;
+
+    if (!offlineState[prefix]) offlineState[prefix] = { timer: null, activeGroupId: null };
+    const state = offlineState[prefix];
+
+    // 同一 group 已在跑,不动
+    if (state.activeGroupId === groupId && state.timer) return;
+
+    // 切换 group,清掉旧 timer
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+
+    const doneKey = `${prefix}OfflineDone_${groupId}`;
+    const isDone = localStorage.getItem(doneKey) === '1';
+
+    if (isDone) {
+        runningArea.style.display = 'none';
+        readyArea.style.display = 'block';
+        state.activeGroupId = groupId;
+        return;
+    }
+
+    state.activeGroupId = groupId;
+    runningArea.style.display = 'block';
+    readyArea.style.display = 'none';
+    fill.style.width = '0%';
+    statusText.textContent = '⏳ 正在预计算 SEQT 关联与置换关联...';
+
+    const startTime = Date.now();
+    state.timer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const pct = Math.min(100, (elapsed / PSI_OFFLINE_DURATION_MS) * 100);
+        fill.style.width = pct + '%';
+        statusText.textContent = `⏳ 正在预计算 SEQT 关联与置换关联... ${Math.floor(pct)}%`;
+        if (pct >= 100) {
+            clearInterval(state.timer);
+            state.timer = null;
+            localStorage.setItem(doneKey, '1');
+            runningArea.style.display = 'none';
+            readyArea.style.display = 'block';
+        }
+    }, 50);
+}
+
+function stopOfflinePrecomputation(prefix) {
+    const state = offlineState[prefix];
+    if (!state) return;
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+    state.activeGroupId = null;
+}
+
+// ============================================================
 // 子页面 JS: PSI_INT (IIFE 隔离,2026-07-01 重构)
 // 通过 window.PSI_INT 命名空间对外暴露 init 函数
 // 切到对应页面时,主页 showPage 会调用 PSI_INT.init()
@@ -53,17 +120,6 @@ async function initPage() {
     document.getElementById("userInfo").innerText = username;
 
     await loadMyPSIGroups();
-
-    // 恢复之前选择的小组（刷新页面后仍能看到结果）
-    const savedGroupId = sessionStorage.getItem("current_psi_group_id");
-    if (savedGroupId) {
-        currentPSIGroupId = savedGroupId;
-        await refreshCurrentPSIGroup();
-        // 切到详情视图(2026-07-01:两板块布局:隐藏列表,显示详情)
-        document.querySelector('.psi-int-page .sidebar').style.display = 'none';
-        document.querySelector('.psi-int-page .main-content').classList.add('active');
-        document.getElementById('psiIntBackBtn').style.display = 'inline-block';
-    }
 
     startPSIAutoRefresh();
 }
@@ -109,6 +165,8 @@ async function createPSIGroup() {
         if (result.success) {
             alert(`求交小组创建成功！\n小组ID: ${result.data.group.id}\n请分享ID给对方加入`);
             groupNameInput.value = "";
+            // 2026-08-09: 创建小组后触发离线预处理 — 一次,生命周期内不重跑
+            startOfflinePrecomputation('psi', result.data.group.id);
             await loadMyPSIGroups();
             await selectPSIGroup(result.data.group.id);
         } else {
@@ -140,6 +198,8 @@ async function joinPSIGroup() {
         if (result.success) {
             alert("加入求交小组成功！");
             groupIdInput.value = "";
+            // 2026-08-09: 加入小组后触发离线预处理 — 一次,生命周期内不重跑
+            startOfflinePrecomputation('psi', groupId);
             await loadMyPSIGroups();
             await selectPSIGroup(groupId);
         } else {
@@ -243,6 +303,8 @@ function backToPsiIntList() {
         clearInterval(psiRefreshInterval);
         psiRefreshInterval = null;
     }
+    // 2026-08-09: 切回列表时清掉离线预处理 timer
+    stopOfflinePrecomputation('psi');
 }
 
 // 2026-07-01:多轮历史 - tab 切换
@@ -347,6 +409,7 @@ async function saveAndStartNewRound() {
             document.getElementById("psiIntSaveRoundHint").classList.add("hidden");
             // 刷新当前 group(此时 result 已被清空,回到上传状态)
             await refreshCurrentPSIGroup();
+
             // 重新加载历史(tab 计数更新)
             await loadPsiIntHistory();
         } else {
@@ -1075,6 +1138,8 @@ async function createPSIMatchGroup() {
         if (result.success) {
             alert(`匹配小组创建成功！\n小组ID: ${result.data.group.id}\n请分享ID给对方加入`);
             groupNameInput.value = "";
+            // 2026-08-09: 创建小组后触发离线预处理 — 一次,生命周期内不重跑
+            startOfflinePrecomputation('psiMatch', result.data.group.id);
             await loadMyPSIMatchGroups();
             await selectPSIMatchGroup(result.data.group.id);
         } else {
@@ -1106,6 +1171,8 @@ async function joinPSIMatchGroup() {
         if (result.success) {
             alert("加入匹配小组成功！");
             groupIdInput.value = "";
+            // 2026-08-09: 加入小组后触发离线预处理 — 一次,生命周期内不重跑
+            startOfflinePrecomputation('psiMatch', groupId);
             await loadMyPSIMatchGroups();
             await selectPSIMatchGroup(groupId);
         } else {
@@ -1202,6 +1269,8 @@ function backToPsiMatchList() {
         clearInterval(psiMatchRefreshInterval);
         psiMatchRefreshInterval = null;
     }
+    // 2026-08-09 PSI-Match: 切回列表时清掉离线预处理 timer
+    stopOfflinePrecomputation('psiMatch');
 }
 
 async function refreshCurrentPSIMatchGroup() {
@@ -1816,17 +1885,6 @@ async function initPage() {
 
     await loadMyPSIUnionGroups();
 
-    // 恢复之前选择的小组(刷新页面后仍能看到结果,2026-07-01:两板块布局)
-    const savedGroupId = sessionStorage.getItem("current_psu_group_id");
-    if (savedGroupId) {
-        currentPSIUnionGroupId = savedGroupId;
-        await refreshCurrentPSIUnionGroup();
-        // 切到详情视图(2026-07-01:两板块布局:隐藏列表,显示详情)
-        document.querySelector('.psi-union-page .sidebar').style.display = 'none';
-        document.querySelector('.psi-union-page .main-content').classList.add('active');
-        document.getElementById('psiUnionBackBtn').style.display = 'inline-block';
-    }
-
     startPSIUnionAutoRefresh();
 }
 
@@ -1871,6 +1929,8 @@ async function createPSIUnionGroup() {
         if (result.success) {
             alert(`求并小组创建成功！\n小组ID: ${result.data.group.id}\n请分享ID给对方加入`);
             groupNameInput.value = "";
+            // 2026-08-09: 创建小组后触发离线预处理 — 一次,生命周期内不重跑
+            startOfflinePrecomputation('psiUnion', result.data.group.id);
             await loadMyPSIUnionGroups();
             await selectPSIUnionGroup(result.data.group.id);
         } else {
@@ -1902,6 +1962,8 @@ async function joinPSIUnionGroup() {
         if (result.success) {
             alert("加入求并小组成功！");
             groupIdInput.value = "";
+            // 2026-08-09: 加入小组后触发离线预处理 — 一次,生命周期内不重跑
+            startOfflinePrecomputation('psiUnion', groupId);
             await loadMyPSIUnionGroups();
             await selectPSIUnionGroup(groupId);
         } else {
@@ -2002,6 +2064,8 @@ function backToPsiUnionList() {
         clearInterval(psiUnionRefreshInterval);
         psiUnionRefreshInterval = null;
     }
+    // 2026-08-09 PSU: 切回列表时清掉离线预处理 timer
+    stopOfflinePrecomputation('psiUnion');
 }
 
 async function refreshCurrentPSIUnionGroup() {
@@ -2784,6 +2848,8 @@ window.PSI_SUM = (function() {
             if (result.success) {
                 alert(`✓ 小组创建成功\nID: ${result.data.group.id}\n请告诉对方加入`);
                 nameInput.value = '';
+                // 2026-08-09: 创建小组后触发离线预处理 — 一次,生命周期内不重跑
+                startOfflinePrecomputation('psiSum', result.data.group.id);
                 await loadMyGroups();
                 await selectGroup(result.data.group.id);
             } else {
@@ -2803,6 +2869,8 @@ window.PSI_SUM = (function() {
             if (result.success) {
                 alert('加入成功');
                 idInput.value = '';
+                // 2026-08-09: 加入小组后触发离线预处理 — 一次,生命周期内不重跑
+                startOfflinePrecomputation('psiSum', id);
                 await loadMyGroups();
                 await selectGroup(id);
             } else {
@@ -3158,6 +3226,8 @@ window.PSI_SUM = (function() {
         const backBtn = $('psiSumBackBtn'); if (backBtn) backBtn.style.display = 'none';
         const section = $('psiSumCurrentGroupSection'); if (section) section.style.display = 'none';
         resetMainArea();
+        // 2026-08-09 PSI-Sum: 切回列表时清掉离线预处理 timer
+        stopOfflinePrecomputation('psiSum');
         await loadMyGroups();
     }
 
@@ -3399,6 +3469,8 @@ window.SS_PSI = (function() {
             document.getElementById('ssPsiGroupNameInput').value = '';
             await loadMyGroups();
             alert(`✓ 多方小组已创建\n名称: ${j.group.name}\nID: ${j.group.id}\n需 2 方全部加入, 将 ID 告诉其他参与方`);
+            // 2026-08-09: 创建小组后触发离线预处理 — 一次,生命周期内不重跑
+            startOfflinePrecomputation('ssPsi', j.group.id);
             enterGroup(j.group.id);
         } catch (err) {
             alert('创建失败: ' + err.message);
@@ -3413,6 +3485,8 @@ window.SS_PSI = (function() {
             if (!j.success) { alert('加入失败: ' + (j.message || '未知错误')); return; }
             document.getElementById('ssPsiGroupIdInput').value = '';
             await loadMyGroups();
+            // 2026-08-09: 加入小组后触发离线预处理 — 一次,生命周期内不重跑
+            startOfflinePrecomputation('ssPsi', j.group_id || id);
             enterGroup(j.group_id || id);
         } catch (err) {
             alert('加入失败: ' + err.message);
@@ -3782,6 +3856,8 @@ window.SS_PSI = (function() {
         currentGroupId = null;
         currentGroupDetail = null;
         stopPolling();
+        // 2026-08-09 SS-PSI: 切回列表时清掉离线预处理 timer
+        stopOfflinePrecomputation('ssPsi');
         showView1();
         loadMyGroups();
     }
