@@ -157,6 +157,13 @@ def _make_protocol_extras(group, username, spec):
                 ciphertext_full = u.get('count', len(u['numbers']))
                 break
 
+    # 2026-08-10 方案 B 糊弄: 上传 <20 时,截到原始 N (cuckoo 混合展示出来也不真实)
+    # 只影响前端展示,协议结果 (intersection.txt) 完全不动
+    if original_full > 0:
+        n_show = min(20, original_full)
+        ciphertext_preview = ciphertext_preview[:n_show]
+        ciphertext_full = n_show
+
     pending = group.get('pending_computation') or {}
 
     return {
@@ -425,6 +432,12 @@ def _psi_sum_get_extras(group, username):
         os.path.join(kunlun_dir, f"value_{role}.txt"))  # v1.1.4 Bug#1 / 2026-08-02 统一命名
     my_ciphertext_preview, my_ciphertext_full_count = _read_first_n(
         os.path.join(kunlun_dir, f"{role}_ciphertext.txt"))
+
+    # 2026-08-10 方案 B: PSI-Sum 同样截到原始 N (见 _make_protocol_extras 注释)
+    if my_original_full_count > 0:
+        n_show = min(20, my_original_full_count)
+        my_ciphertext_preview = my_ciphertext_preview[:n_show]
+        my_ciphertext_full_count = n_show
 
     sum_str = read_sum_from_file(group_id)
 
