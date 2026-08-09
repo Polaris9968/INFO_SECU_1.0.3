@@ -1024,7 +1024,17 @@ def _make_preview_ciphertext_handler(spec: ProtocolSpec):
                 return jsonify({'preview': [], 'count': 0})
             with open(ct_path, 'r', encoding='utf-8') as f:
                 lines = [l.strip() for l in f if l.strip()]
-            return jsonify({'preview': lines[:20], 'count': len(lines)})
+            # 2026-08-10 v2 fix: 截到原始 N (cuckoo 混合展示不真实)
+            # 只影响展示, 协议结果完全不动
+            real_n = 0
+            for u in (group.get('uploads') or []):
+                if u.get('username') == username:
+                    real_n = u.get('count', len(u.get('numbers', [])))
+                    break
+            if real_n > 0:
+                n_show = min(20, real_n)
+                lines = lines[:n_show]
+            return jsonify({'preview': lines, 'count': len(lines)})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return _auth_required(spec, handler)

@@ -3321,6 +3321,10 @@ window.PSI_SUM = (function() {
                     currentGroupDetail = detail;
                     renderFromDetail();
                 }
+                // 2026-08-10 fix: resetMainArea() 隐藏了 psiSumCurrentGroupSection,
+                // renderFromDetail() 不会显示回来,导致保存后主区空白
+                const section = $('psiSumCurrentGroupSection');
+                if (section) section.style.display = 'block';
                 await loadPsiSumHistory();
             } else {
                 alert('保存失败: ' + (result.message || '未知错误'));
