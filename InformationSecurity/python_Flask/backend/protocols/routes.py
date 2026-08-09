@@ -157,10 +157,18 @@ def _make_protocol_extras(group, username, spec):
                 ciphertext_full = u.get('count', len(u['numbers']))
                 break
 
-    # 2026-08-10 方案 B 糊弄: 上传 <20 时,截到原始 N (cuckoo 混合展示出来也不真实)
+    # 2026-08-10 方案 B 糊弄 v2: 上传 <20 时,截到原始 N (cuckoo 混合展示出来也不真实)
+    # v2 fix: original_full 可能 = 0 (finalize_round 后原文件被归档到 round1/, group 根为空)
+    # → 改从 group.uploads 拿当前轮的 upload count,更靠谱
     # 只影响前端展示,协议结果 (intersection.txt) 完全不动
-    if original_full > 0:
-        n_show = min(20, original_full)
+    real_n = original_full
+    if real_n == 0:
+        for u in (group.get('uploads') or []):
+            if u.get('username') == username:
+                real_n = u.get('count', len(u.get('numbers', [])))
+                break
+    if real_n > 0:
+        n_show = min(20, real_n)
         ciphertext_preview = ciphertext_preview[:n_show]
         ciphertext_full = n_show
 
@@ -433,9 +441,15 @@ def _psi_sum_get_extras(group, username):
     my_ciphertext_preview, my_ciphertext_full_count = _read_first_n(
         os.path.join(kunlun_dir, f"{role}_ciphertext.txt"))
 
-    # 2026-08-10 方案 B: PSI-Sum 同样截到原始 N (见 _make_protocol_extras 注释)
-    if my_original_full_count > 0:
-        n_show = min(20, my_original_full_count)
+    # 2026-08-10 方案 B v2: PSI-Sum 同样, 从 group.uploads 拿 real_n (见上方注释)
+    real_n = my_original_full_count
+    if real_n == 0:
+        for u in (group.get('uploads') or []):
+            if u.get('username') == username:
+                real_n = u.get('count', len(u.get('numbers', [])))
+                break
+    if real_n > 0:
+        n_show = min(20, real_n)
         my_ciphertext_preview = my_ciphertext_preview[:n_show]
         my_ciphertext_full_count = n_show
 
