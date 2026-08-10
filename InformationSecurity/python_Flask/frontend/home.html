@@ -34,55 +34,47 @@ body > .top-bar {
     font-size: 14px;
 }
 
-/* 2026-08-10 协议上下文横幅 (v=1.1.11)
-   - 师姐反馈详情页缺协议标识
-   - 设计: 顶部全宽贴 sidebar, 高度60px, 中间鲜亮写协议名+角色
-   - 配合 body.protocol-active 让 user-info 透明 → 两者视觉成一片 */
+/* 2026-08-10 协议上下文横幅 (v=1.1.12)
+   - 师姐反馈详情页缺协议标识 → 顶部贴 sidebar 白底 banner
+   - v=1.1.12 调整: 哥说丑 → 改白底同 user-info panel, 高度一致 (padding 15+25)
+   - receiver/sender 角色用不同色 chip 区分, 协议靠 emoji 区分
+   - 看起来跟 user-info + sidebar 成一体的顶部面板 */
 .protocol-banner {
     position: fixed;
     top: 0;
     left: 200px;        /* 贴 sidebar 右边 */
     right: 0;
-    height: 60px;
+    height: 52px;       /* 跟 user-info panel 差不多高 (15+14*1.2+15) */
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 18px;
-    color: #ffffff;
-    font-weight: 600;
+    gap: 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    color: #1f2937;
     z-index: 99;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-    transition: background 0.4s ease;
-    padding: 0 300px 0 16px;   /* 右侧避开 user-info */
+    padding: 0 16px;
 }
 .protocol-banner.hidden { display: none; }
 
-/* 5 协议主题色 — 鲜艳渐变 */
-.protocol-banner.psi      { background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%); }
-.protocol-banner.psiMatch { background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%); }
-.protocol-banner.psiUnion { background: linear-gradient(90deg, #f97316 0%, #fb923c 100%); }
-.protocol-banner.psiSum   { background: linear-gradient(90deg, #10b981 0%, #14b8a6 100%); }
-.protocol-banner.ssPsi    { background: linear-gradient(90deg, #ec4899 0%, #f43f5e 100%); }
-
-.protocol-icon { font-size: 26px; line-height: 1; }
-.protocol-name { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
-.protocol-divider { opacity: 0.55; font-size: 18px; }
+.protocol-icon { font-size: 18px; line-height: 1; }
+.protocol-name { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
+.protocol-divider { color: #d1d5db; font-size: 14px; }
 .protocol-role {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 500;
-    background: rgba(255,255,255,0.22);
-    padding: 5px 14px;
-    border-radius: 14px;
-    backdrop-filter: blur(4px);
+    background: #f3f4f6;
+    color: #1f2937;
+    padding: 3px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
 }
-.protocol-desc { font-size: 13px; opacity: 0.92; max-width: 480px; }
+/* receiver/sender 用 chip 颜色区分 */
+.protocol-role.role-receiver { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+.protocol-role.role-sender   { background: #fed7aa; color: #9a3412; border-color: #fdba74; }
+.protocol-desc { font-size: 13px; color: #6b7280; max-width: 480px; }
 
-/* banner 激活时, 让 user-info panel 透明背景白字, 看起来跟 banner 成一片 */
-body.protocol-active > .top-bar {
-    background: transparent;
-    border-bottom: 1px solid rgba(255,255,255,0.25);
-    color: #ffffff;
-}
+/* v=1.1.12: user-info 不再需要 transparent (banner 跟它都是白底, 默认成一片) */
 
 /* 左侧边栏 */
 body > .sidebar {
@@ -4540,7 +4532,7 @@ body > .sidebar {
             </div><!-- /ssPsiView2 -->
 <script src="./api.js"></script>
 <script src="./home.js"></script>
-<script src="./home-psi-pages.js?v=1.1.11"></script>
+<script src="./home-psi-pages.js?v=1.1.12"></script>
 
 </body>
 </html>

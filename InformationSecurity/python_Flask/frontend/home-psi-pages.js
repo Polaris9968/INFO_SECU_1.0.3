@@ -39,19 +39,30 @@ function showProtocolBanner(prefix, role) {
     const banner = document.getElementById('protocolBanner');
     const meta = PROTOCOL_META[prefix];
     if (!banner || !meta) return;
-    document.getElementById('protocolIcon').textContent = meta.icon;
-    document.getElementById('protocolName').textContent = meta.name;
-    document.getElementById('protocolRole').textContent = '您的角色: ' + role;
-    document.getElementById('protocolDesc').textContent = meta.desc;
-    banner.className = 'protocol-banner ' + prefix;
+    const iconEl = document.getElementById('protocolIcon');
+    const nameEl = document.getElementById('protocolName');
+    const roleEl = document.getElementById('protocolRole');
+    const descEl = document.getElementById('protocolDesc');
+    iconEl.textContent = meta.icon;
+    nameEl.textContent = meta.name;
+    if (role) {
+        const isReceiver = role.includes('接收方') || role.includes('Receiver');
+        roleEl.textContent = role;
+        roleEl.className = 'protocol-role ' + (isReceiver ? 'role-receiver' : 'role-sender');
+    } else {
+        // v=1.1.12: role 未传时显示占位符(避免空白), fetch 回来后再调用覆盖
+        roleEl.textContent = '您的角色: 加载中...';
+        roleEl.className = 'protocol-role';
+    }
+    descEl.textContent = meta.desc;
+    // v=1.1.12: 保留 hidden 切换, className 只加 prefix 不重置 hidden
     banner.classList.remove('hidden');
-    document.body.classList.add('protocol-active');
 }
 
 function hideProtocolBanner() {
     const banner = document.getElementById('protocolBanner');
     if (banner) banner.classList.add('hidden');
-    document.body.classList.remove('protocol-active');
+    // v=1.1.12: 不再切 body.protocol-active (banner 白底跟 user-info 同色, 默认成一片)
 }
 
 function startOfflinePrecomputation(prefix, groupId) {
@@ -325,6 +336,8 @@ async function selectPSIGroup(groupId) {
     uploadedMyFile = false;
     uploadedOtherFile = false;
 
+    // v=1.1.12: 立即显示 banner(不依赖 fetch), 角色后填
+    showProtocolBanner('psi');
     await refreshCurrentPSIGroup();
 }
 
@@ -1305,6 +1318,8 @@ async function selectPSIMatchGroup(groupId) {
     uploadedMyMatchFile = false;
     uploadedOtherMatchFile = false;
 
+    // v=1.1.12: 立即显示 banner
+    showProtocolBanner('psiMatch');
     await refreshCurrentPSIMatchGroup();
 }
 
@@ -2105,6 +2120,8 @@ async function selectPSIUnionGroup(groupId) {
     uploadedMyUnionFile = false;
     uploadedOtherUnionFile = false;
 
+    // v=1.1.12: 立即显示 banner
+    showProtocolBanner('psiUnion');
     await refreshCurrentPSIUnionGroup();
 }
 
@@ -2947,6 +2964,8 @@ window.PSI_SUM = (function() {
 
     async function selectGroup(groupId) {
         currentGroupId = groupId;
+        // v=1.1.12: 立即显示 banner, 不等 fetch
+        showProtocolBanner('psiSum');
         const detail = await loadGroupDetail(groupId);
         if (!detail) { alert('加载小组失败'); await init(); return; }
         currentGroupDetail = detail;
@@ -3584,6 +3603,8 @@ window.SS_PSI = (function() {
 
     async function enterGroup(groupId) {
         currentGroupId = groupId;
+        // v=1.1.12: 立即显示 banner, 不等 fetch
+        showProtocolBanner('ssPsi');
         showView2();
         const detail = await loadGroupDetail(groupId);
         if (!detail) { alert('加载小组失败'); backToList(); return; }
