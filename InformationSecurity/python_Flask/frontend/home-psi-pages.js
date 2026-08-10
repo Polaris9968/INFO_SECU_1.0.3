@@ -24,6 +24,36 @@
 const PSI_OFFLINE_DURATION_MS = 2500;
 const offlineState = {}; // prefix -> { timer, activeGroupId }
 
+// ==================== 协议上下文横幅 (v=1.1.11, 2026-08-10) ====================
+// 师姐反馈详情页缺协议标识 → 在顶部贴 sidebar 的彩色 banner 写协议名+角色+简介
+// 5 协议各有主题色, banner 激活时 user-info panel 透明 → 两者成一片
+const PROTOCOL_META = {
+    psi:      { icon: '🔒', name: '隐私求交 (PSI)',       desc: '双方加密求交,只看到交集元素' },
+    psiMatch: { icon: '🎯', name: '集合匹配 (PSI-Match)',   desc: '集合子集匹配,复用 PSI 加密内核' },
+    psiUnion: { icon: '🔗', name: '隐私求并 (PSU)',         desc: '双方加密求并,共享并集' },
+    psiSum:   { icon: '📊', name: '隐私求和 (PSI-Sum)',      desc: '求交 + 关联数值求和' },
+    ssPsi:    { icon: '🤝', name: '秘密共享求交 (SS-PSI)',   desc: '双方各持秘密份额,XOR 还原交集' }
+};
+
+function showProtocolBanner(prefix, role) {
+    const banner = document.getElementById('protocolBanner');
+    const meta = PROTOCOL_META[prefix];
+    if (!banner || !meta) return;
+    document.getElementById('protocolIcon').textContent = meta.icon;
+    document.getElementById('protocolName').textContent = meta.name;
+    document.getElementById('protocolRole').textContent = '您的角色: ' + role;
+    document.getElementById('protocolDesc').textContent = meta.desc;
+    banner.className = 'protocol-banner ' + prefix;
+    banner.classList.remove('hidden');
+    document.body.classList.add('protocol-active');
+}
+
+function hideProtocolBanner() {
+    const banner = document.getElementById('protocolBanner');
+    if (banner) banner.classList.add('hidden');
+    document.body.classList.remove('protocol-active');
+}
+
 function startOfflinePrecomputation(prefix, groupId) {
     if (!groupId) return;
 
@@ -314,6 +344,8 @@ function backToPsiIntList() {
     }
     // 2026-08-09: 切回列表时清掉离线预处理 timer
     stopOfflinePrecomputation('psi');
+    // 2026-08-10 v=1.1.11: 返回列表时隐藏协议 banner
+    hideProtocolBanner();
 }
 
 // 2026-07-01:多轮历史 - tab 切换
@@ -605,6 +637,9 @@ async function refreshCurrentPSIGroup() {
             // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新,让 doneKey 状态生效
             // (之前只在 createGroup/joinGroup 触发 → 进组时 DOM 保留上次的 running 显示)
             startOfflinePrecomputation('psi', currentPSIGroupId);
+
+            // 2026-08-10 v=1.1.11: 顶部贴 sidebar 协议 banner (师姐反馈详情页缺协议标识)
+            showProtocolBanner('psi', group.creator === sessionStorage.getItem("username") ? '接收方 (Receiver)' : '发送方 (Sender)');
 
         } else {
             if (result.message && (result.message.includes("不是该小组成员") || result.message.includes("不存在"))) {
@@ -1284,6 +1319,8 @@ function backToPsiMatchList() {
     }
     // 2026-08-09 PSI-Match: 切回列表时清掉离线预处理 timer
     stopOfflinePrecomputation('psiMatch');
+    // 2026-08-10 v=1.1.11: 返回列表时隐藏协议 banner
+    hideProtocolBanner();
 }
 
 async function refreshCurrentPSIMatchGroup() {
@@ -1446,6 +1483,9 @@ async function refreshCurrentPSIMatchGroup() {
 
             // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新
             startOfflinePrecomputation('psiMatch', currentPSIMatchGroupId);
+
+            // 2026-08-10 v=1.1.11: 协议 banner
+            showProtocolBanner('psiMatch', group.creator === sessionStorage.getItem("username") ? '接收方 (Receiver)' : '发送方 (Sender)');
 
         } else {
             if (result.message && result.message.includes("不是该小组成员")) {
@@ -2082,6 +2122,8 @@ function backToPsiUnionList() {
     }
     // 2026-08-09 PSU: 切回列表时清掉离线预处理 timer
     stopOfflinePrecomputation('psiUnion');
+    // 2026-08-10 v=1.1.11: 返回列表时隐藏协议 banner
+    hideProtocolBanner();
 }
 
 async function refreshCurrentPSIUnionGroup() {
@@ -2247,6 +2289,9 @@ async function refreshCurrentPSIUnionGroup() {
 
             // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新
             startOfflinePrecomputation('psiUnion', currentPSIUnionGroupId);
+
+            // 2026-08-10 v=1.1.11: 协议 banner
+            showProtocolBanner('psiUnion', group.creator === sessionStorage.getItem("username") ? '接收方 (Receiver)' : '发送方 (Sender)');
 
         } else {
             if (result.message && (result.message.includes("不存在") || result.message.includes("404"))) {
@@ -2927,6 +2972,9 @@ window.PSI_SUM = (function() {
         await loadPsiSumHistory();
         // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新
         startOfflinePrecomputation('psiSum', currentGroupId);
+        // 2026-08-10 v=1.1.11: 协议 banner
+        const _psiSumUser = sessionStorage.getItem('username');
+        showProtocolBanner('psiSum', (currentGroupDetail.group.creator === _psiSumUser) ? '接收方 (Receiver)' : '发送方 (Sender)');
     }
 
     function renderFromDetail() {
@@ -3239,6 +3287,8 @@ window.PSI_SUM = (function() {
         switchTab('current');
         const tabHistory = $('psiSumTabHistory'); if (tabHistory) tabHistory.style.display = 'none';
         const histCount = $('psiSumHistoryCount'); if (histCount) histCount.innerText = '0';
+        // 2026-08-10 v=1.1.11: 返回列表时隐藏协议 banner
+        hideProtocolBanner();
         // 2026-07-08:显示 sidebar,隐藏 main(跟 PSI_INT 一致)
         const sidebarEl = document.querySelector('.psi-sum-page .sidebar');
         if (sidebarEl) sidebarEl.style.display = 'block';
@@ -3550,6 +3600,8 @@ window.SS_PSI = (function() {
         loadSSPsiHistory();  // 2026-07-31: 进入组时拉历史 tab 计数
         // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新
         startOfflinePrecomputation('ssPsi', currentGroupId);
+        // 2026-08-10 v=1.1.11: 协议 banner
+        showProtocolBanner('ssPsi', detail.creator === getUsername() ? '接收方 (Receiver)' : '发送方 (Sender)');
     }
 
     // 2026-07-31 哥要历史记录 UI (仿 PSI-Sum)
@@ -3885,6 +3937,8 @@ window.SS_PSI = (function() {
         stopPolling();
         // 2026-08-09 SS-PSI: 切回列表时清掉离线预处理 timer
         stopOfflinePrecomputation('ssPsi');
+        // 2026-08-10 v=1.1.11: 返回列表时隐藏协议 banner
+        hideProtocolBanner();
         showView1();
         loadMyGroups();
     }

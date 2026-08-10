@@ -34,6 +34,56 @@ body > .top-bar {
     font-size: 14px;
 }
 
+/* 2026-08-10 协议上下文横幅 (v=1.1.11)
+   - 师姐反馈详情页缺协议标识
+   - 设计: 顶部全宽贴 sidebar, 高度60px, 中间鲜亮写协议名+角色
+   - 配合 body.protocol-active 让 user-info 透明 → 两者视觉成一片 */
+.protocol-banner {
+    position: fixed;
+    top: 0;
+    left: 200px;        /* 贴 sidebar 右边 */
+    right: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    color: #ffffff;
+    font-weight: 600;
+    z-index: 99;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    transition: background 0.4s ease;
+    padding: 0 300px 0 16px;   /* 右侧避开 user-info */
+}
+.protocol-banner.hidden { display: none; }
+
+/* 5 协议主题色 — 鲜艳渐变 */
+.protocol-banner.psi      { background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%); }
+.protocol-banner.psiMatch { background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%); }
+.protocol-banner.psiUnion { background: linear-gradient(90deg, #f97316 0%, #fb923c 100%); }
+.protocol-banner.psiSum   { background: linear-gradient(90deg, #10b981 0%, #14b8a6 100%); }
+.protocol-banner.ssPsi    { background: linear-gradient(90deg, #ec4899 0%, #f43f5e 100%); }
+
+.protocol-icon { font-size: 26px; line-height: 1; }
+.protocol-name { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+.protocol-divider { opacity: 0.55; font-size: 18px; }
+.protocol-role {
+    font-size: 15px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.22);
+    padding: 5px 14px;
+    border-radius: 14px;
+    backdrop-filter: blur(4px);
+}
+.protocol-desc { font-size: 13px; opacity: 0.92; max-width: 480px; }
+
+/* banner 激活时, 让 user-info panel 透明背景白字, 看起来跟 banner 成一片 */
+body.protocol-active > .top-bar {
+    background: transparent;
+    border-bottom: 1px solid rgba(255,255,255,0.25);
+    color: #ffffff;
+}
+
 /* 左侧边栏 */
 body > .sidebar {
     position: fixed;
@@ -3401,6 +3451,15 @@ body > .sidebar {
     <span>当前用户：<strong id="userInfo"></strong><span id="adminBadge" class="admin-badge hidden">管理员</span></span>
 </div>
 
+<!-- 2026-08-10 协议上下文横幅 (v=1.1.11) — 协议详情页时由 JS 填充, 其他页 hidden -->
+<div class="protocol-banner hidden" id="protocolBanner">
+    <span id="protocolIcon" class="protocol-icon"></span>
+    <span id="protocolName" class="protocol-name"></span>
+    <span class="protocol-divider">·</span>
+    <span id="protocolRole" class="protocol-role"></span>
+    <span id="protocolDesc" class="protocol-desc"></span>
+</div>
+
 <!-- 左侧导航栏 -->
 <div class="sidebar">
     <div class="nav-btn active" onclick="showPage('home')">首页</div>
@@ -4481,7 +4540,7 @@ body > .sidebar {
             </div><!-- /ssPsiView2 -->
 <script src="./api.js"></script>
 <script src="./home.js"></script>
-<script src="./home-psi-pages.js?v=1.1.10"></script>
+<script src="./home-psi-pages.js?v=1.1.11"></script>
 
 </body>
 </html>
