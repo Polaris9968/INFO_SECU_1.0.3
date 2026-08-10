@@ -822,6 +822,11 @@ def privacy_union():
 
 @app.route('/<path:filename>')
 def serve_static(filename):
+    # 2026-08-10 Friday fix: 缺文件(如 /favicon.ico)直接 404,别抛 NotFound
+    # 让下面 catch-all @errorhandler(Exception) 抓住升 500
+    full_path = os.path.join(STATIC_FOLDER_ABS, filename)
+    if not os.path.isfile(full_path):
+        return jsonify({'error': f'Not Found: /{filename}'}), 404
     # 2026-07-30 Friday fix: 开发模式禁止缓存静态文件(避免 Chrome 缓存旧 JS 导致修了不生效)
     response = send_from_directory(STATIC_FOLDER_ABS, filename)
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
