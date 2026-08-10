@@ -602,6 +602,10 @@ async function refreshCurrentPSIGroup() {
             // 加载历史(让 tab 按钮显示 round 数)
             await loadPsiIntHistory();
 
+            // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新,让 doneKey 状态生效
+            // (之前只在 createGroup/joinGroup 触发 → 进组时 DOM 保留上次的 running 显示)
+            startOfflinePrecomputation('psi', currentPSIGroupId);
+
         } else {
             if (result.message && (result.message.includes("不是该小组成员") || result.message.includes("不存在"))) {
                 alert("该小组已不存在或你已不是成员");
@@ -1440,6 +1444,9 @@ async function refreshCurrentPSIMatchGroup() {
                 }
             }
 
+            // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新
+            startOfflinePrecomputation('psiMatch', currentPSIMatchGroupId);
+
         } else {
             if (result.message && result.message.includes("不是该小组成员")) {
                 alert("你已不再是该小组成员");
@@ -2238,6 +2245,9 @@ async function refreshCurrentPSIUnionGroup() {
 
             await loadPsiUnionHistory();
 
+            // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新
+            startOfflinePrecomputation('psiUnion', currentPSIUnionGroupId);
+
         } else {
             if (result.message && (result.message.includes("不存在") || result.message.includes("404"))) {
                 console.log("小组已解散，停止自动刷新");
@@ -2915,6 +2925,8 @@ window.PSI_SUM = (function() {
         renderFromDetail();
         startPolling();
         await loadPsiSumHistory();
+        // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新
+        startOfflinePrecomputation('psiSum', currentGroupId);
     }
 
     function renderFromDetail() {
@@ -3536,6 +3548,8 @@ window.SS_PSI = (function() {
         renderFromDetail();
         startPolling();
         loadSSPsiHistory();  // 2026-07-31: 进入组时拉历史 tab 计数
+        // 2026-08-10 Friday fix: 刷新路径触发离线预处理刷新
+        startOfflinePrecomputation('ssPsi', currentGroupId);
     }
 
     // 2026-07-31 哥要历史记录 UI (仿 PSI-Sum)
