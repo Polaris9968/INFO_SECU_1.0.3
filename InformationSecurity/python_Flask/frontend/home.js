@@ -138,7 +138,7 @@ function showPage(page) {
         // 2026-07-05: SS-PSI 演示 (mock)
         document.getElementById("ssPsiPage").style.display = "block";
         navBtns.forEach(btn => {
-            if (btn.textContent.trim() === '多方隐私求交') btn.classList.add('active');
+            if (btn.textContent.trim() === '秘密共享交集') btn.classList.add('active');
         });
         if (typeof SS_PSI !== 'undefined' && SS_PSI.init) SS_PSI.init();
     }

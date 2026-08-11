@@ -332,6 +332,9 @@ async function selectPSIGroup(groupId) {
     document.querySelector('.psi-int-page .sidebar').style.display = 'none';
     document.querySelector('.psi-int-page .main-content').classList.add('active');
     document.getElementById('psiIntBackBtn').style.display = 'inline-block';
+    // 2026-08-11 Friday fix: loadMyPSIGroups 清理路径可能残留 .hidden,inline style 覆盖 .hidden !important,确保 section 显示
+    const psiIntSection = document.getElementById('currentPSIGroupSection');
+    if (psiIntSection) psiIntSection.style.display = 'block';
 
     uploadedMyFile = false;
     uploadedOtherFile = false;
@@ -965,24 +968,18 @@ async function loadPSICiphertextPreview() {
 function downloadPSIResult() {
     if (!currentPSIGroupId) return;
     const token = sessionStorage.getItem("token");
-    // 2026-07-30 Friday fix (Bug 1):译文版需先归档才能下,在这里自动归档。
+    // 2026-08-12 Friday fix: 删掉自动 finalize-round 调用 — 之前会让 receiver 整取下一轮、sender 被 403
+    // 后端 /download-result-with-original 已支持无归档实时 reverse_map 生成 (有归档读归档、无归档实时生成)
     const gid = currentPSIGroupId;
     (async () => {
         try {
-            // 1. 先归档当前轮(设计:归档后生成 intersection_with_original.txt)
-            const fr = await fetch(`/api/psi-group/${gid}/finalize-round`, {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + token },
+            const r = await fetch(`/api/psi-group/${gid}/download-result-with-original`, {
+                headers: { 'Authorization': 'Bearer ' + token }
             });
-            // 409 = 该轮已归档 → OK,跳过
-            if (!fr.ok && fr.status !== 409) {
-                const err = await fr.json().catch(() => ({}));
-                throw new Error(err.error || '归档失败');
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                throw new Error(err.error || '下载失败');
             }
-            // 2. 再下译文版
-            const url = `/api/psi-group/${gid}/download-result-with-original`;
-            const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
-            if (!r.ok) throw new Error('下载失败');
             const blob = await r.blob();
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -1314,6 +1311,9 @@ async function selectPSIMatchGroup(groupId) {
     document.querySelector('.psi-match-page .sidebar').style.display = 'none';
     document.querySelector('.psi-match-page .main-content').classList.add('active');
     document.getElementById('psiMatchBackBtn').style.display = 'inline-block';
+    // 2026-08-11 Friday fix: loadMyGroups 清理路径可能残留 .hidden,inline style 覆盖 .hidden !important,确保 section 显示
+    const psiMatchSection = document.getElementById('currentPSIMatchGroupSection');
+    if (psiMatchSection) psiMatchSection.style.display = 'block';
 
     uploadedMyMatchFile = false;
     uploadedOtherMatchFile = false;
@@ -2116,6 +2116,9 @@ async function selectPSIUnionGroup(groupId) {
     document.querySelector('.psi-union-page .sidebar').style.display = 'none';
     document.querySelector('.psi-union-page .main-content').classList.add('active');
     document.getElementById('psiUnionBackBtn').style.display = 'inline-block';
+    // 2026-08-11 Friday fix: loadMyGroups 清理路径可能残留 .hidden,inline style 覆盖 .hidden !important,确保 section 显示
+    const psiUnionSection = document.getElementById('currentPSIUnionGroupSection');
+    if (psiUnionSection) psiUnionSection.style.display = 'block';
 
     uploadedMyUnionFile = false;
     uploadedOtherUnionFile = false;
